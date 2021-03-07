@@ -10,8 +10,12 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
   },
   "dependencies": {
+    "@react-native-firebase/app": "^11.0.0",
+    "@react-native-firebase/firestore": "^11.0.0",
     "react": "16.13.1",
-    "react-native": "0.63.4"
+    "react-native": "0.63.4",
+    "react-native-fix-ios-version": "^2.0.1",
+    "react-native-vision-camera": "^1.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",
@@ -40,5 +44,6 @@
       "json",
       "node"
     ]
-  }
+  },
+  "iosTarget": "12.0"
 }

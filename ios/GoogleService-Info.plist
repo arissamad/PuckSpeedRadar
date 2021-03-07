@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>578379167692-ihlb30i45c44iqu1vobaafr56qgotqcm.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.578379167692-ihlb30i45c44iqu1vobaafr56qgotqcm</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAqoUQ7Ub7nlnEK31yUwmf430cPMyjniPw</string>
+	<key>GCM_SENDER_ID</key>
+	<string>578379167692</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>org.reactjs.native.example.PuckSpeedRadar</string>
+	<key>PROJECT_ID</key>
+	<string>puck-speed-radar</string>
+	<key>STORAGE_BUCKET</key>
+	<string>puck-speed-radar.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:578379167692:ios:52dbd6e4ca5442ab23cf69</string>
+</dict>
+</plist>

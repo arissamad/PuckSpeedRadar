@@ -8,8 +8,9 @@
  * @format
  */
 
-import React from 'react';
+import React, {useState} from 'react';
 import {
+  Button,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -24,10 +25,27 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
-
-declare const global: {HermesInternal: null | {}};
+import broadcastSpeed2 from './src/broadcaster/firestore_broadcaster';
+import getPermissions from './src/camera/get_permissions';
+import StatusBox from './src/status/status_box';
 
 const App = () => {
+  getPermissions();
+  const [status, setStatus] = useState('initialized');
+
+  const onPressLearnMore = () => {
+    console.log('this is just a log 2');
+    if (status == 'failing') {
+      setStatus('succeeding');
+    } else {
+      setStatus('failing');
+    }
+  };
+
+  const broadcastSpeed = () => {
+    broadcastSpeed2(5);
+  };
+
   return (
     <>
       <StatusBar barStyle="dark-content" />
@@ -36,17 +54,13 @@ const App = () => {
           contentInsetAdjustmentBehavior="automatic"
           style={styles.scrollView}>
           <Header />
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )}
           <View style={styles.body}>
+            <StatusBox status={status}></StatusBox>
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>Step One</Text>
               <Text style={styles.sectionDescription}>
                 Edit <Text style={styles.highlight}>App.tsx</Text> to change
-                this screen and then come back to see your edits. BOOYAH!
+                this screen and then come back to see your edits. BOOYAH!2
               </Text>
             </View>
             <View style={styles.sectionContainer}>
@@ -66,6 +80,18 @@ const App = () => {
               <Text style={styles.sectionDescription}>
                 Read the docs to discover what to do next:
               </Text>
+
+              <Button
+                onPress={onPressLearnMore}
+                title="Learn More"
+                color="#841584"
+              />
+
+              <Button
+                onPress={broadcastSpeed}
+                title="Broadcast Speed"
+                color="#158484"
+              />
             </View>
             <LearnMoreLinks />
           </View>
@@ -77,7 +103,7 @@ const App = () => {
 
 const styles = StyleSheet.create({
   scrollView: {
-    backgroundColor: Colors.lighter,
+    //backgroundColor: Colors.lighter,
   },
   engine: {
     position: 'absolute',
@@ -93,7 +119,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 24,
     fontWeight: '600',
-    color: Colors.black,
+    color: Colors.aliceblue,
   },
   sectionDescription: {
     marginTop: 8,
