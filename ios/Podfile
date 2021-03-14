@@ -8,11 +8,6 @@ target 'PuckSpeedRadar' do
 
   use_react_native!(:path => config["reactNativePath"])
 
-  target 'PuckSpeedRadarTests' do
-    inherit! :complete
-    # Pods for testing
-  end
-
   # Enables Flipper.
   #
   # Note that if you have use_frameworks! enabled, Flipper will not work and
@@ -20,14 +15,10 @@ target 'PuckSpeedRadar' do
   use_flipper!({ 'Flipper-Folly' => '2.3.0' })
   post_install do |installer|
     flipper_post_install(installer)
+    
+    installer.pods_project.build_configurations.each do |config|
+      config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64"
+    end
   end
 end
 
-target 'PuckSpeedRadar-tvOS' do
-  # Pods for PuckSpeedRadar-tvOS
-
-  target 'PuckSpeedRadar-tvOSTests' do
-    inherit! :search_paths
-    # Pods for testing
-  end
-end

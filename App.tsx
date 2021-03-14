@@ -8,7 +8,7 @@
  * @format
  */
 
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   Button,
   SafeAreaView,
@@ -18,23 +18,37 @@ import {
   Text,
   View,
 } from 'react-native';
+import {Camera} from 'react-native-vision-camera';
 import {
   Colors,
-  DebugInstructions,
   Header,
   LearnMoreLinks,
-  ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 import broadcastSpeed2 from './src/broadcaster/firestore_broadcaster';
+import getCameraConfiguration, {
+  CameraConfig,
+} from './src/camera/get_camera_configuration';
 import getPermissions from './src/camera/get_permissions';
+import MyCamera from './src/camera/my_camera';
+import Photo from './src/camera/photo';
 import StatusBox from './src/status/status_box';
 
 const App = () => {
-  getPermissions();
+  const [
+    cameraConfiguration,
+    setCameraConfiguration,
+  ] = useState<CameraConfig>();
+
+  const [permissionGranted, setPermissionGranted] = useState(false);
+
+  useEffect(() => {
+    getPermissions(setPermissionGranted);
+    getCameraConfiguration(setCameraConfiguration);
+  }, []);
   const [status, setStatus] = useState('initialized');
 
   const onPressLearnMore = () => {
-    console.log('this is just a log 2');
+    console.log('this is just a log 3');
     if (status == 'failing') {
       setStatus('succeeding');
     } else {
@@ -46,6 +60,39 @@ const App = () => {
     broadcastSpeed2(5);
   };
 
+  const [photoUri, setPhotoUri] = useState('');
+
+  const cameraRef = useRef<Camera>(null);
+  const takePicture = () => {
+    cameraRef.current
+      ?.takePhoto()
+      .then((snapshot) => {
+        console.log('got photo', snapshot);
+        setPhotoUri(snapshot.path);
+      })
+      .catch((e) => {
+        console.log('error', e);
+      });
+  };
+
+  const callSwift = () => {
+    console.log('calling swift');
+  };
+
+  if (cameraConfiguration == undefined) {
+    console.log('camera config not ready');
+  } else {
+    console.log('camera config ready');
+  }
+
+  if (permissionGranted) {
+    console.log('Permission is all set');
+  } else {
+    console.log('Permission not yet set');
+  }
+
+  const showCamera = cameraConfiguration != undefined && permissionGranted;
+
   return (
     <>
       <StatusBar barStyle="dark-content" />
@@ -56,34 +103,30 @@ const App = () => {
           <Header />
           <View style={styles.body}>
             <StatusBox status={status}></StatusBox>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Step One</Text>
-              <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.tsx</Text> to change
-                this screen and then come back to see your edits. BOOYAH!2
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>See Your Changes</Text>
-              <Text style={styles.sectionDescription}>
-                <ReloadInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Debug</Text>
-              <Text style={styles.sectionDescription}>
-                <DebugInstructions />
-              </Text>
-            </View>
+
+            <MyCamera
+              showCamera={showCamera}
+              cameraConfig={cameraConfiguration as CameraConfig}
+              cameraRef={cameraRef}></MyCamera>
+
+            <Photo photoUri={photoUri} />
+
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>Learn More</Text>
               <Text style={styles.sectionDescription}>
                 Read the docs to discover what to do next:
               </Text>
+              <Button onPress={callSwift} title="Call swift" color="#841584" />
+
+              <Button
+                onPress={takePicture}
+                title="Take snapshot"
+                color="#841584"
+              />
 
               <Button
                 onPress={onPressLearnMore}
-                title="Learn More"
+                title="Toggle Status"
                 color="#841584"
               />
 

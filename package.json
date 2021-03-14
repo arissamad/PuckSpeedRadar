@@ -15,6 +15,7 @@
     "react": "16.13.1",
     "react-native": "0.63.4",
     "react-native-fix-ios-version": "^2.0.1",
+    "react-native-swift": "^1.2.3",
     "react-native-vision-camera": "^1.0.0"
   },
   "devDependencies": {
@@ -45,5 +46,6 @@
       "node"
     ]
   },
-  "iosTarget": "12.0"
+  "iosTarget": "12.0",
+  "isSwift": true
 }
