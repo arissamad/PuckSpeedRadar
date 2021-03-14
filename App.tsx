@@ -11,6 +11,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {
   Button,
+  NativeEventEmitter,
   NativeModules,
   SafeAreaView,
   ScrollView,
@@ -45,6 +46,16 @@ const App = () => {
   useEffect(() => {
     getPermissions(setPermissionGranted);
     getCameraConfiguration(setCameraConfiguration);
+
+    const nativeEventEmitter = new NativeEventEmitter(
+      NativeModules.MyEventEmitter,
+    );
+    nativeEventEmitter.addListener('image-available', (imageUrl) => {
+      console.log('New image URL: ', imageUrl);
+      setPhotoUri(imageUrl);
+    });
+
+    console.log('We are now listening to image-available');
   }, []);
   const [status, setStatus] = useState('initialized');
 
@@ -79,6 +90,13 @@ const App = () => {
   const callSwift = () => {
     console.log('calling swift');
     NativeModules.Bulb.turnOn();
+    NativeModules.ImageProcessor.process(
+      'file:///Users/aris/Library/Developer/CoreSimulator/Devices/D5565BBE-48DA-4821-9086-EE9D54432BA4/data/Media/DCIM/100APPLE/IMG_0007.MOV',
+      (newImageUrl: string) => {
+        console.log('arguments', newImageUrl);
+        setPhotoUri(newImageUrl);
+      },
+    );
   };
 
   if (cameraConfiguration == undefined) {

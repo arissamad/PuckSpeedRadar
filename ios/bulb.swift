@@ -10,12 +10,14 @@ import Foundation
 @objc(Bulb)
 class Bulb: NSObject {
   
-@objc
-static var isOn = false
+  @objc static var isOn = false
   
-@objc
- func turnOn() {
-  Bulb.isOn = true
-  print("Bulb is now ON")
- }
+  @objc func turnOn() {
+    Bulb.isOn = true
+    print("Bulb is now ON 2")
+  }
+  
+  @objc static func requiresMainQueueSetup() -> Bool {
+    return true
+  }
 }

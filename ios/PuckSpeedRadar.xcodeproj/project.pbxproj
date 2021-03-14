@@ -11,6 +11,10 @@
 		0BF0A65F25FDD6AA00E3F762 /* test_objc_File.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A65E25FDD6AA00E3F762 /* test_objc_File.m */; };
 		0BF0A66825FDD8DE00E3F762 /* bulb.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A66725FDD8DE00E3F762 /* bulb.m */; };
 		0BF0A66E25FDDA0900E3F762 /* bulb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A66D25FDDA0900E3F762 /* bulb.swift */; };
+		0BF0A67525FDE00400E3F762 /* image_processor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A67425FDE00400E3F762 /* image_processor.swift */; };
+		0BF0A67825FDE08A00E3F762 /* image_processor.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A67725FDE08A00E3F762 /* image_processor.m */; };
+		0BF0A67D25FE6DD000E3F762 /* my_event_emitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A67C25FE6DD000E3F762 /* my_event_emitter.swift */; };
+		0BF0A68025FE6DDE00E3F762 /* my_event_emitter.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A67F25FE6DDE00E3F762 /* my_event_emitter.m */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.m */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
@@ -27,6 +31,11 @@
 		0BF0A65E25FDD6AA00E3F762 /* test_objc_File.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = test_objc_File.m; sourceTree = "<group>"; };
 		0BF0A66725FDD8DE00E3F762 /* bulb.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = bulb.m; sourceTree = "<group>"; };
 		0BF0A66D25FDDA0900E3F762 /* bulb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bulb.swift; sourceTree = "<group>"; };
+		0BF0A67425FDE00400E3F762 /* image_processor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = image_processor.swift; sourceTree = "<group>"; };
+		0BF0A67725FDE08A00E3F762 /* image_processor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = image_processor.m; sourceTree = "<group>"; };
+		0BF0A67A25FE5E9700E3F762 /* PuckSpeedRadar-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "PuckSpeedRadar-Bridging-Header.h"; sourceTree = "<group>"; };
+		0BF0A67C25FE6DD000E3F762 /* my_event_emitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = my_event_emitter.swift; sourceTree = "<group>"; };
+		0BF0A67F25FE6DDE00E3F762 /* my_event_emitter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = my_event_emitter.m; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* PuckSpeedRadar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PuckSpeedRadar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = PuckSpeedRadar/AppDelegate.h; sourceTree = "<group>"; };
 		13B07FB01A68108700A75B9A /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AppDelegate.m; path = PuckSpeedRadar/AppDelegate.m; sourceTree = "<group>"; };
@@ -101,6 +110,11 @@
 				0BF0A65E25FDD6AA00E3F762 /* test_objc_File.m */,
 				0BF0A66725FDD8DE00E3F762 /* bulb.m */,
 				0BF0A66D25FDDA0900E3F762 /* bulb.swift */,
+				0BF0A67425FDE00400E3F762 /* image_processor.swift */,
+				0BF0A67725FDE08A00E3F762 /* image_processor.m */,
+				0BF0A67A25FE5E9700E3F762 /* PuckSpeedRadar-Bridging-Header.h */,
+				0BF0A67C25FE6DD000E3F762 /* my_event_emitter.swift */,
+				0BF0A67F25FE6DDE00E3F762 /* my_event_emitter.m */,
 			);
 			name = PuckSpeedRadar;
 			sourceTree = "<group>";
@@ -329,10 +343,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				0BF0A66E25FDDA0900E3F762 /* bulb.swift in Sources */,
+				0BF0A68025FE6DDE00E3F762 /* my_event_emitter.m in Sources */,
 				0BF0A66825FDD8DE00E3F762 /* bulb.m in Sources */,
+				0BF0A67525FDE00400E3F762 /* image_processor.swift in Sources */,
 				13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
 				0BF0A65F25FDD6AA00E3F762 /* test_objc_File.m in Sources */,
+				0BF0A67D25FE6DD000E3F762 /* my_event_emitter.swift in Sources */,
+				0BF0A67825FDE08A00E3F762 /* image_processor.m in Sources */,
 				982B24F905374DC8A1985716 /* RNPlaceholder.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -361,7 +379,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = PuckSpeedRadar;
 				SWIFT_INSTALL_OBJC_HEADER = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "PuckSpeedRadar-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.2;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -388,7 +406,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = PuckSpeedRadar;
 				SWIFT_INSTALL_OBJC_HEADER = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "PuckSpeedRadar-Bridging-Header.h";
 				SWIFT_VERSION = 5.2;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
