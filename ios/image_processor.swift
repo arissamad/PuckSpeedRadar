@@ -17,11 +17,11 @@ class ImageProcessor: NSObject {
   @objc func process(_ uri: String, callback successCallback: @escaping RCTResponseSenderBlock) {
     print("Starting image processing with " + uri)
     
-    var index = 0;
-    
+    var index: CMTimeValue = 5;
+    var timeInterval = 0.0;
     for i in stride(from: 0.0, to:1.0, by: 0.1) {
-      imageFromVideo(url: URL(string: uri)!, at: i) { image in
-        print("here we are, retrieving the image \(image!.size.width) at \(i)");
+      imageFromVideo(url: URL(string: uri)!, at: index) { image in
+        print("here we are, retrieving the image \(image!.size.width) at \(index)");
         
         let newImageUrl = self.saveImage(image!, name: "my_image_\(index)");
         index = index + 1;
@@ -40,18 +40,23 @@ class ImageProcessor: NSObject {
     }
   }
   
-  func imageFromVideo(url: URL, at time: TimeInterval, completion: @escaping (UIImage?) -> Void) {
+  func imageFromVideo(url: URL, at time: CMTimeValue, completion: @escaping (UIImage?) -> Void) {
     DispatchQueue.global(qos: .background).async {
       let asset = AVURLAsset(url: url)
       
       let assetIG = AVAssetImageGenerator(asset: asset)
       assetIG.appliesPreferredTrackTransform = true
       assetIG.apertureMode = AVAssetImageGenerator.ApertureMode.encodedPixels
+      assetIG.requestedTimeToleranceAfter = CMTime.zero;
+      assetIG.requestedTimeToleranceBefore = CMTime.zero;
       
-      let cmTime = CMTime(seconds: time, preferredTimescale: 60)
+      let cmTime = CMTime(value: time, timescale: 10)
+      print("cmTime seconds is \(cmTime.seconds)");
       let thumbnailImageRef: CGImage
       do {
-        thumbnailImageRef = try assetIG.copyCGImage(at: cmTime, actualTime: nil)
+        var actualTime: CMTime = CMTime();
+        thumbnailImageRef = try assetIG.copyCGImage(at: cmTime, actualTime: &actualTime);
+        print("Actual time is \(actualTime.seconds)")
       } catch let error {
         print("Error: \(error)")
         return completion(nil)
