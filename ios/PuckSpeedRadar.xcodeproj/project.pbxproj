@@ -8,7 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		0B04AFBE25F49C7F0051FAF6 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 0B04AFBD25F49C7F0051FAF6 /* GoogleService-Info.plist */; };
-		0BF0A65B25FDD50800E3F762 /* process_image.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A65A25FDD50800E3F762 /* process_image.swift */; };
+		0BF0A65F25FDD6AA00E3F762 /* test_objc_File.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A65E25FDD6AA00E3F762 /* test_objc_File.m */; };
+		0BF0A66825FDD8DE00E3F762 /* bulb.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A66725FDD8DE00E3F762 /* bulb.m */; };
+		0BF0A66E25FDDA0900E3F762 /* bulb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A66D25FDDA0900E3F762 /* bulb.swift */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.m */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
@@ -22,7 +24,9 @@
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00E356F21AD99517003FC87E /* PuckSpeedRadarTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PuckSpeedRadarTests.m; sourceTree = "<group>"; };
 		0B04AFBD25F49C7F0051FAF6 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		0BF0A65A25FDD50800E3F762 /* process_image.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = process_image.swift; path = ../process_image.swift; sourceTree = "<group>"; };
+		0BF0A65E25FDD6AA00E3F762 /* test_objc_File.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = test_objc_File.m; sourceTree = "<group>"; };
+		0BF0A66725FDD8DE00E3F762 /* bulb.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = bulb.m; sourceTree = "<group>"; };
+		0BF0A66D25FDDA0900E3F762 /* bulb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bulb.swift; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* PuckSpeedRadar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PuckSpeedRadar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = PuckSpeedRadar/AppDelegate.h; sourceTree = "<group>"; };
 		13B07FB01A68108700A75B9A /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AppDelegate.m; path = PuckSpeedRadar/AppDelegate.m; sourceTree = "<group>"; };
@@ -87,7 +91,6 @@
 		13B07FAE1A68108700A75B9A /* PuckSpeedRadar */ = {
 			isa = PBXGroup;
 			children = (
-				0BF0A65A25FDD50800E3F762 /* process_image.swift */,
 				008F07F21AC5B25A0029DE68 /* main.jsbundle */,
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
 				13B07FB01A68108700A75B9A /* AppDelegate.m */,
@@ -95,6 +98,9 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB71A68108700A75B9A /* main.m */,
+				0BF0A65E25FDD6AA00E3F762 /* test_objc_File.m */,
+				0BF0A66725FDD8DE00E3F762 /* bulb.m */,
+				0BF0A66D25FDDA0900E3F762 /* bulb.swift */,
 			);
 			name = PuckSpeedRadar;
 			sourceTree = "<group>";
@@ -322,10 +328,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0BF0A66E25FDDA0900E3F762 /* bulb.swift in Sources */,
+				0BF0A66825FDD8DE00E3F762 /* bulb.m in Sources */,
 				13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
+				0BF0A65F25FDD6AA00E3F762 /* test_objc_File.m in Sources */,
 				982B24F905374DC8A1985716 /* RNPlaceholder.swift in Sources */,
-				0BF0A65B25FDD50800E3F762 /* process_image.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -352,6 +360,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = PuckSpeedRadar;
+				SWIFT_INSTALL_OBJC_HEADER = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.2;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -377,7 +387,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = PuckSpeedRadar;
-				"SWIFT_OBJC_BRIDGING_HEADER[arch=*]" = "";
+				SWIFT_INSTALL_OBJC_HEADER = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_VERSION = 5.2;
 				VERSIONING_SYSTEM = "apple-generic";
 			};

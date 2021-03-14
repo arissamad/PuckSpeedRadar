@@ -11,6 +11,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {
   Button,
+  NativeModules,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -77,6 +78,7 @@ const App = () => {
 
   const callSwift = () => {
     console.log('calling swift');
+    NativeModules.Bulb.turnOn();
   };
 
   if (cameraConfiguration == undefined) {
