@@ -17,20 +17,10 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
-import {
-  ImageLibraryOptions,
-  ImagePickerResponse,
-  launchImageLibrary,
-} from 'react-native-image-picker';
 import {Camera} from 'react-native-vision-camera';
-import {
-  Colors,
-  Header,
-  LearnMoreLinks,
-} from 'react-native/Libraries/NewAppScreen';
+import {Colors} from 'react-native/Libraries/NewAppScreen';
 import broadcastSpeed2 from './src/broadcaster/firestore_broadcaster';
 import getCameraConfiguration, {
   CameraConfig,
@@ -38,6 +28,7 @@ import getCameraConfiguration, {
 import getPermissions from './src/camera/get_permissions';
 import MyCamera from './src/camera/my_camera';
 import Photo from './src/camera/photo';
+import ControlPanel from './src/controls/control_panel';
 import StatusBox from './src/status/status_box';
 
 const App = () => {
@@ -116,18 +107,6 @@ const App = () => {
     );
   };
 
-  const pickVideo = () => {
-    const options: ImageLibraryOptions = {
-      mediaType: 'video',
-      videoQuality: 'high',
-    };
-    launchImageLibrary(options, (responseObject: ImagePickerResponse) => {
-      console.log('Response', responseObject);
-      console.log('URI', responseObject.uri);
-      setVideoUri(responseObject.uri!);
-    });
-  };
-
   // if (cameraConfiguration == undefined) {
   //   console.log('camera config not ready');
   // } else {
@@ -149,7 +128,6 @@ const App = () => {
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           style={styles.scrollView}>
-          <Header />
           <View style={styles.body}>
             <StatusBox status={status}></StatusBox>
 
@@ -160,26 +138,18 @@ const App = () => {
 
             <Photo photoUri={photoUri} />
 
+            <ControlPanel />
+
             <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Learn More</Text>
-              <Text style={styles.sectionDescription}>
-                Read the docs to discover what to do next:
-              </Text>
               <Button
                 onPress={callSwiftWithSimulatorVideo}
-                title="Call swift (Simulator Video)"
+                title="Call swift (Simulator Videos)"
                 color="#841584"
               />
 
               <Button
                 onPress={callSwiftWithSelectedVideo}
                 title="Call swift (Selected Video)"
-                color="#841584"
-              />
-
-              <Button
-                onPress={pickVideo}
-                title="Select video file"
                 color="#841584"
               />
 
@@ -201,7 +171,6 @@ const App = () => {
                 color="#158484"
               />
             </View>
-            <LearnMoreLinks />
           </View>
         </ScrollView>
       </SafeAreaView>
