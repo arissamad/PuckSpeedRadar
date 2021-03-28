@@ -21,4 +21,8 @@ class MyEventEmitter: RCTEventEmitter {
       "image-available"
     ];
   }
+  
+  @objc override static func requiresMainQueueSetup() -> Bool {
+    return true
+  }
 }

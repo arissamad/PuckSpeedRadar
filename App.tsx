@@ -20,6 +20,11 @@ import {
   Text,
   View,
 } from 'react-native';
+import {
+  ImageLibraryOptions,
+  ImagePickerResponse,
+  launchImageLibrary,
+} from 'react-native-image-picker';
 import {Camera} from 'react-native-vision-camera';
 import {
   Colors,
@@ -51,7 +56,6 @@ const App = () => {
       NativeModules.MyEventEmitter,
     );
     nativeEventEmitter.addListener('image-available', (imageUrl) => {
-      console.log('New image URL: ', imageUrl);
       setPhotoUri(imageUrl);
     });
 
@@ -73,6 +77,7 @@ const App = () => {
   };
 
   const [photoUri, setPhotoUri] = useState('');
+  const [selectedVideoUri, setVideoUri] = useState('');
 
   const cameraRef = useRef<Camera>(null);
   const takePicture = () => {
@@ -87,7 +92,7 @@ const App = () => {
       });
   };
 
-  const callSwift = () => {
+  const callSwiftWithSimulatorVideo = () => {
     console.log('calling swift');
     NativeModules.Bulb.turnOn();
     NativeModules.ImageProcessor.process(
@@ -99,17 +104,41 @@ const App = () => {
     );
   };
 
-  if (cameraConfiguration == undefined) {
-    console.log('camera config not ready');
-  } else {
-    console.log('camera config ready');
-  }
+  const callSwiftWithSelectedVideo = () => {
+    console.log('calling swift');
+    NativeModules.Bulb.turnOn();
+    NativeModules.ImageProcessor.process(
+      selectedVideoUri,
+      (newImageUrl: string) => {
+        console.log('arguments', newImageUrl);
+        setPhotoUri(newImageUrl);
+      },
+    );
+  };
 
-  if (permissionGranted) {
-    console.log('Permission is all set');
-  } else {
-    console.log('Permission not yet set');
-  }
+  const pickVideo = () => {
+    const options: ImageLibraryOptions = {
+      mediaType: 'video',
+      videoQuality: 'high',
+    };
+    launchImageLibrary(options, (responseObject: ImagePickerResponse) => {
+      console.log('Response', responseObject);
+      console.log('URI', responseObject.uri);
+      setVideoUri(responseObject.uri!);
+    });
+  };
+
+  // if (cameraConfiguration == undefined) {
+  //   console.log('camera config not ready');
+  // } else {
+  //   console.log('camera config ready');
+  // }
+
+  // if (permissionGranted) {
+  //   console.log('Permission is all set');
+  // } else {
+  //   console.log('Permission not yet set');
+  // }
 
   const showCamera = cameraConfiguration != undefined && permissionGranted;
 
@@ -136,7 +165,23 @@ const App = () => {
               <Text style={styles.sectionDescription}>
                 Read the docs to discover what to do next:
               </Text>
-              <Button onPress={callSwift} title="Call swift" color="#841584" />
+              <Button
+                onPress={callSwiftWithSimulatorVideo}
+                title="Call swift (Simulator Video)"
+                color="#841584"
+              />
+
+              <Button
+                onPress={callSwiftWithSelectedVideo}
+                title="Call swift (Selected Video)"
+                color="#841584"
+              />
+
+              <Button
+                onPress={pickVideo}
+                title="Select video file"
+                color="#841584"
+              />
 
               <Button
                 onPress={takePicture}

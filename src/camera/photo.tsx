@@ -1,5 +1,5 @@
 import React from 'react';
-import {Image, StyleSheet, View} from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 
 type Props = {
   photoUri: string;
@@ -11,14 +11,13 @@ export default function Photo(props: Props): React.ReactElement {
   const source = {
     uri: props.photoUri,
   };
-  console.log('displaying image at ', props.photoUri);
   return <Image style={styles.imageStyle} source={source} />;
 }
 
 const styles = StyleSheet.create({
   imageStyle: {
-    width: 300,
-    height: 300,
+    width: 414,
+    height: 81,
     borderWidth: 1,
     borderColor: 'black',
   },

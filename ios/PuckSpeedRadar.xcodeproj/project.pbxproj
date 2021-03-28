@@ -3,11 +3,16 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		0B04AFBE25F49C7F0051FAF6 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 0B04AFBD25F49C7F0051FAF6 /* GoogleService-Info.plist */; };
+		0B07C2E926064A8F009FEB6C /* SwiftImage in Frameworks */ = {isa = PBXBuildFile; productRef = 0B07C2E826064A8F009FEB6C /* SwiftImage */; };
+		0B72CE10260EF96C0023C574 /* blob.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B72CE0F260EF96B0023C574 /* blob.swift */; };
+		0B72CE13260EFA310023C574 /* polygon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B72CE12260EFA310023C574 /* polygon.swift */; };
+		0B72CE16260EFCA30023C574 /* bpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B72CE15260EFCA30023C574 /* bpoint.swift */; };
+		0B72CE19260F0D4E0023C574 /* blob_labeler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B72CE18260F0D4E0023C574 /* blob_labeler.swift */; };
 		0BF0A65F25FDD6AA00E3F762 /* test_objc_File.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A65E25FDD6AA00E3F762 /* test_objc_File.m */; };
 		0BF0A66825FDD8DE00E3F762 /* bulb.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A66725FDD8DE00E3F762 /* bulb.m */; };
 		0BF0A66E25FDDA0900E3F762 /* bulb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A66D25FDDA0900E3F762 /* bulb.swift */; };
@@ -28,6 +33,10 @@
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00E356F21AD99517003FC87E /* PuckSpeedRadarTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PuckSpeedRadarTests.m; sourceTree = "<group>"; };
 		0B04AFBD25F49C7F0051FAF6 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		0B72CE0F260EF96B0023C574 /* blob.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = blob.swift; sourceTree = "<group>"; };
+		0B72CE12260EFA310023C574 /* polygon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = polygon.swift; sourceTree = "<group>"; };
+		0B72CE15260EFCA30023C574 /* bpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bpoint.swift; sourceTree = "<group>"; };
+		0B72CE18260F0D4E0023C574 /* blob_labeler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = blob_labeler.swift; sourceTree = "<group>"; };
 		0BF0A65E25FDD6AA00E3F762 /* test_objc_File.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = test_objc_File.m; sourceTree = "<group>"; };
 		0BF0A66725FDD8DE00E3F762 /* bulb.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = bulb.m; sourceTree = "<group>"; };
 		0BF0A66D25FDDA0900E3F762 /* bulb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bulb.swift; sourceTree = "<group>"; };
@@ -65,6 +74,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B07C2E926064A8F009FEB6C /* SwiftImage in Frameworks */,
 				BDD7F1069A1696F496F2801E /* libPods-PuckSpeedRadar.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -115,6 +125,10 @@
 				0BF0A67A25FE5E9700E3F762 /* PuckSpeedRadar-Bridging-Header.h */,
 				0BF0A67C25FE6DD000E3F762 /* my_event_emitter.swift */,
 				0BF0A67F25FE6DDE00E3F762 /* my_event_emitter.m */,
+				0B72CE0F260EF96B0023C574 /* blob.swift */,
+				0B72CE12260EFA310023C574 /* polygon.swift */,
+				0B72CE15260EFCA30023C574 /* bpoint.swift */,
+				0B72CE18260F0D4E0023C574 /* blob_labeler.swift */,
 			);
 			name = PuckSpeedRadar;
 			sourceTree = "<group>";
@@ -200,6 +214,9 @@
 			dependencies = (
 			);
 			name = PuckSpeedRadar;
+			packageProductDependencies = (
+				0B07C2E826064A8F009FEB6C /* SwiftImage */,
+			);
 			productName = PuckSpeedRadar;
 			productReference = 13B07F961A680F5B00A75B9A /* PuckSpeedRadar.app */;
 			productType = "com.apple.product-type.application";
@@ -227,6 +244,9 @@
 				Base,
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
+			packageReferences = (
+				0B07C2E726064A8F009FEB6C /* XCRemoteSwiftPackageReference "swift-image" */,
+			);
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -342,11 +362,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B72CE16260EFCA30023C574 /* bpoint.swift in Sources */,
+				0B72CE13260EFA310023C574 /* polygon.swift in Sources */,
 				0BF0A66E25FDDA0900E3F762 /* bulb.swift in Sources */,
 				0BF0A68025FE6DDE00E3F762 /* my_event_emitter.m in Sources */,
 				0BF0A66825FDD8DE00E3F762 /* bulb.m in Sources */,
+				0B72CE10260EF96C0023C574 /* blob.swift in Sources */,
 				0BF0A67525FDE00400E3F762 /* image_processor.swift in Sources */,
 				13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */,
+				0B72CE19260F0D4E0023C574 /* blob_labeler.swift in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
 				0BF0A65F25FDD6AA00E3F762 /* test_objc_File.m in Sources */,
 				0BF0A67D25FE6DD000E3F762 /* my_event_emitter.swift in Sources */,
@@ -370,7 +394,10 @@
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
 				INFOPLIST_FILE = PuckSpeedRadar/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 14.1;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -397,7 +424,10 @@
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
 				INFOPLIST_FILE = PuckSpeedRadar/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 14.1;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -460,7 +490,10 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
-				LD_RUNPATH_SEARCH_PATHS = "/usr/lib/swift $(inherited)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					/usr/lib/swift,
+					"$(inherited)",
+				);
 				LIBRARY_SEARCH_PATHS = (
 					"\"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)\"",
 					"\"$(inherited)\"",
@@ -513,7 +546,10 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
-				LD_RUNPATH_SEARCH_PATHS = "/usr/lib/swift $(inherited)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					/usr/lib/swift,
+					"$(inherited)",
+				);
 				LIBRARY_SEARCH_PATHS = (
 					"\"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)\"",
 					"\"$(inherited)\"",
@@ -547,6 +583,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0B07C2E726064A8F009FEB6C /* XCRemoteSwiftPackageReference "swift-image" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/koher/swift-image.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.7.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0B07C2E826064A8F009FEB6C /* SwiftImage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B07C2E726064A8F009FEB6C /* XCRemoteSwiftPackageReference "swift-image" */;
+			productName = SwiftImage;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 83CBB9F71A601CBA00E9B192 /* Project object */;
 }
