@@ -20,8 +20,6 @@ export default function ControlPanel(props: Props): React.ReactElement {
 const styles = StyleSheet.create({
   overallView: {
     width: '100%',
-    height: '100%',
-    backgroundColor: '#ff0000',
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',

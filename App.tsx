@@ -131,14 +131,20 @@ const App = () => {
           <View style={styles.body}>
             <StatusBox status={status}></StatusBox>
 
-            <MyCamera
-              showCamera={showCamera}
-              cameraConfig={cameraConfiguration as CameraConfig}
-              cameraRef={cameraRef}></MyCamera>
+            <View style={styles.cameraHolderOuter}>
+              <View style={styles.cameraHolderInner}>
+                <MyCamera
+                  showCamera={showCamera}
+                  cameraConfig={cameraConfiguration as CameraConfig}
+                  cameraRef={cameraRef}></MyCamera>
+              </View>
+            </View>
+
+            <View style={styles.controlPanelHolder}>
+              <ControlPanel />
+            </View>
 
             <Photo photoUri={photoUri} />
-
-            <ControlPanel />
 
             <View style={styles.sectionContainer}>
               <Button
@@ -170,6 +176,12 @@ const App = () => {
                 title="Broadcast Speed"
                 color="#158484"
               />
+
+              <View
+                style={{
+                  width: '100%',
+                  height: 500,
+                }}></View>
             </View>
           </View>
         </ScrollView>
@@ -203,6 +215,22 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '400',
     color: Colors.dark,
+  },
+  cameraHolderOuter: {
+    position: 'relative',
+    width: '100%',
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  cameraHolderInner: {
+    position: 'absolute',
+  },
+  controlPanelHolder: {
+    position: 'relative',
+    zIndex: 1,
+    paddingTop: 280,
+    transform: [{translateX: 20}],
   },
   highlight: {
     fontWeight: '700',
