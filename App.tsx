@@ -28,6 +28,7 @@ import getCameraConfiguration, {
 import getPermissions from './src/camera/get_permissions';
 import MyCamera from './src/camera/my_camera';
 import Photo from './src/camera/photo';
+import CalibrationPanel from './src/controls/calibration_panel';
 import ControlPanel from './src/controls/control_panel';
 import StatusBox from './src/status/status_box';
 
@@ -144,6 +145,10 @@ const App = () => {
               <ControlPanel />
             </View>
 
+            <View style={styles.centerContent}>
+              <CalibrationPanel showPanel={true}></CalibrationPanel>
+            </View>
+
             <Photo photoUri={photoUri} />
 
             <View style={styles.sectionContainer}>
@@ -215,6 +220,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '400',
     color: Colors.dark,
+  },
+  centerContent: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   cameraHolderOuter: {
     position: 'relative',

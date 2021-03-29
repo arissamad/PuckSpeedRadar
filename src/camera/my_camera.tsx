@@ -34,9 +34,10 @@ export default function MyCamera(props: Props): React.ReactElement {
   );
 }
 
-const width = 720 / 2;
-const height = 1280 / 2;
-const translateX = height / 2 - width / 2;
+export const imageWidth = 1280 / 2;
+export const imageHeight = 720 / 2;
+
+const translateX = imageWidth / 2 - imageHeight / 2;
 
 const styles = StyleSheet.create({
   noCameraView: {
@@ -55,8 +56,8 @@ const styles = StyleSheet.create({
   cameraView: {
     position: 'relative',
     backgroundColor: 'grey',
-    width: width,
-    height: height,
+    width: imageHeight,
+    height: imageWidth,
     transform: [{rotateZ: '90deg'}, {translateX: -translateX}],
     borderColor: '#ff0000',
     borderWidth: 3,
