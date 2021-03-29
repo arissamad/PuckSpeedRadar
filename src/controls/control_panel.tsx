@@ -2,17 +2,19 @@ import React from 'react';
 import {StyleSheet, View} from 'react-native';
 import ControlButton from './control_button';
 
-type Props = {};
+type Props = {
+  onPressCalibrate: () => void;
+};
 
 export default function ControlPanel(props: Props): React.ReactElement {
-  const onPressCalibrate = () => {
-    console.log('Pressed calibrate');
+  const onPressRecord = () => {
+    console.log('Pressed record');
   };
 
   return (
     <View style={styles.overallView}>
-      <ControlButton title="Calibrate" onPress={onPressCalibrate} />
-      <ControlButton title="Record" onPress={onPressCalibrate} />
+      <ControlButton title="Calibrate" onPress={props.onPressCalibrate} />
+      <ControlButton title="Record" onPress={onPressRecord} />
     </View>
   );
 }

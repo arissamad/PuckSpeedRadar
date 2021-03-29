@@ -1,4 +1,5 @@
-import React, {useState} from 'react';
+import AsyncStorage from '@react-native-community/async-storage';
+import React, {useEffect, useState} from 'react';
 import {Button, Image, ImageStyle, Text, View, ViewStyle} from 'react-native';
 import {imageHeight, imageWidth} from '../camera/my_camera';
 
@@ -12,10 +13,6 @@ type Coordinate = {
 };
 
 export default function CalibrationPanel(props: Props): React.ReactElement {
-  if (!props.showPanel) {
-    return <></>;
-  }
-
   const [leftCalibrationPoint, setLeftCalibrationPoint] = useState({
     x: 50,
     y: imageHeight / 2,
@@ -25,6 +22,38 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
     x: imageWidth - 50,
     y: imageHeight / 2,
   });
+
+  const [loadedCalibrationPoint, setLoadedCalibrationPoint] = useState(false);
+
+  useEffect(() => {
+    const loadCalibrationPoints = async () => {
+      const leftCalibrationX =
+        (await AsyncStorage.getItem('leftCalibrationX')) ?? 50;
+      const leftCalibrationY =
+        (await AsyncStorage.getItem('leftCalibrationY')) ?? imageHeight / 2;
+      const rightCalibrationX =
+        (await AsyncStorage.getItem('rightCalibrationX')) ?? imageWidth - 50;
+      const rightCalibrationY =
+        (await AsyncStorage.getItem('rightCalibrationY')) ?? imageHeight / 2;
+
+      setLeftCalibrationPoint({
+        x: Number(leftCalibrationX),
+        y: Number(leftCalibrationY),
+      });
+      setRightCalibrationPoint({
+        x: Number(rightCalibrationX),
+        y: Number(rightCalibrationY),
+      });
+      setLoadedCalibrationPoint(true);
+
+      console.log('loaded calibration points');
+    };
+    loadCalibrationPoints();
+  }, []);
+
+  if (!props.showPanel || !loadedCalibrationPoint) {
+    return <></>;
+  }
 
   const onPressReset = () => {};
 
@@ -55,10 +84,12 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
       <View style={panelView}>
         <View style={twoControllerHolder}>
           <Controller
+            calibrationPoint={'left'}
             coordinate={leftCalibrationPoint}
             setCoordinate={setLeftCalibrationPoint}
             onPressReset={onPressReset}></Controller>
           <Controller
+            calibrationPoint={'right'}
             coordinate={rightCalibrationPoint}
             setCoordinate={setRightCalibrationPoint}
             onPressReset={onPressReset}></Controller>
@@ -70,6 +101,7 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
 }
 
 type ControllerProps = {
+  calibrationPoint: 'left' | 'right';
   coordinate: Coordinate;
   setCoordinate: (coordinate: Coordinate) => void;
   onPressReset: () => void;
@@ -78,9 +110,13 @@ type ControllerProps = {
 function Controller(props: ControllerProps): React.ReactElement {
   const onPress = (xChange: number, yChange: number) => {
     return () => {
+      const newX = props.coordinate.x + xChange * 10;
+      const newY = props.coordinate.y + yChange * 10;
+      AsyncStorage.setItem(props.calibrationPoint + 'CalibrationX', '' + newX);
+      AsyncStorage.setItem(props.calibrationPoint + 'CalibrationY', '' + newY);
       props.setCoordinate({
-        x: props.coordinate.x + xChange * 10,
-        y: props.coordinate.y + yChange * 10,
+        x: newX,
+        y: newY,
       });
     };
   };

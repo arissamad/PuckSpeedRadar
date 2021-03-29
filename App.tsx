@@ -108,6 +108,11 @@ const App = () => {
     );
   };
 
+  const [showCalibrationPanel, setShowCalibrationPanel] = useState(false);
+  const clickedCalibration = () => {
+    setShowCalibrationPanel(!showCalibrationPanel);
+  };
+
   // if (cameraConfiguration == undefined) {
   //   console.log('camera config not ready');
   // } else {
@@ -142,11 +147,12 @@ const App = () => {
             </View>
 
             <View style={styles.controlPanelHolder}>
-              <ControlPanel />
+              <ControlPanel onPressCalibrate={clickedCalibration} />
             </View>
 
             <View style={styles.centerContent}>
-              <CalibrationPanel showPanel={true}></CalibrationPanel>
+              <CalibrationPanel
+                showPanel={showCalibrationPanel}></CalibrationPanel>
             </View>
 
             <Photo photoUri={photoUri} />
