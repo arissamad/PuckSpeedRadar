@@ -9,7 +9,7 @@ type Props = {
 
 export default function Bounds(props: Props): React.ReactElement {
   return (
-    <View>
+    <View style={overallStyle}>
       <View
         style={{
           ...verticalBar,
@@ -63,6 +63,9 @@ export default function Bounds(props: Props): React.ReactElement {
   );
 }
 
+const overallStyle: ViewStyle = {
+  zIndex: 1,
+};
 const verticalBar: ViewStyle = {
   position: 'absolute',
   width: 2,

@@ -19,7 +19,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import {Camera} from 'react-native-vision-camera';
+import {Camera, PhotoFile} from 'react-native-vision-camera';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import broadcastSpeed2 from './src/broadcaster/firestore_broadcaster';
 import getCameraConfiguration, {
@@ -27,7 +27,6 @@ import getCameraConfiguration, {
 } from './src/camera/get_camera_configuration';
 import getPermissions from './src/camera/get_permissions';
 import MyCamera from './src/camera/my_camera';
-import Photo from './src/camera/photo';
 import CalibrationPanel from './src/controls/calibration_panel';
 import ControlPanel from './src/controls/control_panel';
 import StatusBox from './src/status/status_box';
@@ -75,8 +74,8 @@ const App = () => {
   const takePicture = () => {
     cameraRef.current
       ?.takePhoto()
-      .then((snapshot) => {
-        console.log('got photo', snapshot);
+      .then((snapshot: PhotoFile) => {
+        console.log('got photo', snapshot.width, snapshot.height);
         setPhotoUri(snapshot.path);
       })
       .catch((e) => {
@@ -110,6 +109,9 @@ const App = () => {
 
   const [showCalibrationPanel, setShowCalibrationPanel] = useState(false);
   const clickedCalibration = () => {
+    if (!showCalibrationPanel) {
+      takePicture();
+    }
     setShowCalibrationPanel(!showCalibrationPanel);
   };
 
@@ -152,10 +154,9 @@ const App = () => {
 
             <View style={styles.centerContent}>
               <CalibrationPanel
-                showPanel={showCalibrationPanel}></CalibrationPanel>
+                showPanel={showCalibrationPanel}
+                photoUri={photoUri}></CalibrationPanel>
             </View>
-
-            <Photo photoUri={photoUri} />
 
             <View style={styles.sectionContainer}>
               <Button

@@ -6,6 +6,7 @@ import Bounds from './bounds';
 
 type Props = {
   showPanel: boolean;
+  photoUri: string;
 };
 
 export type Coordinate = {
@@ -129,7 +130,9 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
     }
   };
 
-  const source = {};
+  const source = {
+    uri: props.photoUri,
+  };
   return (
     <View>
       <View
@@ -240,16 +243,19 @@ function Controller(props: ControllerProps): React.ReactElement {
 }
 
 const imageStyle: ImageStyle = {
-  width: imageWidth,
-  height: imageHeight,
+  position: 'absolute',
+  width: imageHeight,
+  height: imageWidth,
   borderWidth: 1,
   borderColor: 'red',
+  transform: [{rotateZ: '90deg'}, {translateX: -imageHeight / 2}],
 };
 
 const crossHairPanel: ViewStyle = {
   position: 'absolute',
   top: imageHeight / 2,
   left: 50,
+  zIndex: 1,
 };
 
 const crossHairDot: ViewStyle = {
