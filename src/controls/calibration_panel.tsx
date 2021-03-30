@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-community/async-storage';
 import React, {useEffect, useState} from 'react';
-import {Button, Image, ImageStyle, Text, View, ViewStyle} from 'react-native';
+import {Button, Image, ImageStyle, View, ViewStyle} from 'react-native';
 import {imageHeight, imageWidth} from '../camera/my_camera';
 import Bounds from './bounds';
 
@@ -12,6 +12,8 @@ export type Coordinate = {
   x: number;
   y: number;
 };
+
+type CalibrationMode = 'c1' | 'c2' | 'b1' | 'b2';
 
 export default function CalibrationPanel(props: Props): React.ReactElement {
   const [leftCalibrationPoint, setLeftCalibrationPoint] = useState({
@@ -31,6 +33,8 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
   });
 
   const [loadedCalibrationPoint, setLoadedCalibrationPoint] = useState(false);
+
+  const [calibrationMode, setCalibrationMode] = useState<CalibrationMode>('c1');
 
   useEffect(() => {
     const loadCalibrationPoints = async () => {
@@ -74,8 +78,56 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
 
   const onPressReset = () => {};
 
-  console.log('upper left', upperLeftBoundary);
-  console.log('lower right', lowerRightBoundary);
+  const setCalibrationPoint = (diffCoordinate: Coordinate) => {
+    console.log('calibrationMode', calibrationMode, diffCoordinate);
+
+    // AsyncStorage.setItem(props.calibrationPoint + 'CalibrationX', '' + newX);
+    // AsyncStorage.setItem(props.calibrationPoint + 'CalibrationY', '' + newY);
+    let newX: number;
+    let newY: number;
+    switch (calibrationMode) {
+      case 'c1':
+        newX = leftCalibrationPoint.x + diffCoordinate.x;
+        newY = leftCalibrationPoint.y + diffCoordinate.y;
+        setLeftCalibrationPoint({
+          x: newX,
+          y: newY,
+        });
+        AsyncStorage.setItem('leftCalibrationX', '' + newX);
+        AsyncStorage.setItem('leftCalibrationY', '' + newY);
+        break;
+      case 'c2':
+        newX = rightCalibrationPoint.x + diffCoordinate.x;
+        newY = rightCalibrationPoint.y + diffCoordinate.y;
+        setRightCalibrationPoint({
+          x: newX,
+          y: newY,
+        });
+        AsyncStorage.setItem('rightCalibrationX', '' + newX);
+        AsyncStorage.setItem('rightCalibrationY', '' + newY);
+        break;
+      case 'b1':
+        newX = upperLeftBoundary.x + diffCoordinate.x;
+        newY = upperLeftBoundary.y + diffCoordinate.y;
+        setUpperLeftBoundary({
+          x: newX,
+          y: newY,
+        });
+        AsyncStorage.setItem('boundsX1', '' + newX);
+        AsyncStorage.setItem('boundsY1', '' + newY);
+        break;
+      case 'b2':
+        newX = lowerRightBoundary.x + diffCoordinate.x;
+        newY = lowerRightBoundary.y + diffCoordinate.y;
+        setLowerRightBoundary({
+          x: newX,
+          y: newY,
+        });
+        AsyncStorage.setItem('boundsX2', '' + newX);
+        AsyncStorage.setItem('boundsY2', '' + newY);
+        break;
+    }
+  };
 
   const source = {};
   return (
@@ -107,39 +159,61 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
       <View style={panelView}>
         <View style={twoControllerHolder}>
           <Controller
-            calibrationPoint={'left'}
-            coordinate={leftCalibrationPoint}
-            setCoordinate={setLeftCalibrationPoint}
-            onPressReset={onPressReset}></Controller>
-          <Controller
-            calibrationPoint={'right'}
-            coordinate={rightCalibrationPoint}
-            setCoordinate={setRightCalibrationPoint}
+            onChange={setCalibrationPoint}
             onPressReset={onPressReset}></Controller>
         </View>
-        <Text style={styles.sectionTitle}>Calibration</Text>
+        <View style={buttonRow}>
+          <View
+            style={[roundButton, calibrationMode == 'c1' && selectedButton]}>
+            <Button
+              title={'C1'}
+              onPress={() => {
+                setCalibrationMode('c1');
+              }}></Button>
+          </View>
+          <View
+            style={[roundButton, calibrationMode == 'c2' && selectedButton]}>
+            <Button
+              title={'C2'}
+              onPress={() => {
+                setCalibrationMode('c2');
+              }}></Button>
+          </View>
+          <View
+            style={[roundButton, calibrationMode == 'b1' && selectedButton]}>
+            <Button
+              title={'B1'}
+              onPress={() => {
+                setCalibrationMode('b1');
+              }}></Button>
+          </View>
+          <View
+            style={[roundButton, calibrationMode == 'b2' && selectedButton]}>
+            <Button
+              title={'B2'}
+              onPress={() => {
+                setCalibrationMode('b2');
+              }}></Button>
+          </View>
+        </View>
       </View>
     </View>
   );
 }
 
 type ControllerProps = {
-  calibrationPoint: 'left' | 'right';
-  coordinate: Coordinate;
-  setCoordinate: (coordinate: Coordinate) => void;
+  onChange: (diffCoordinate: Coordinate) => void;
   onPressReset: () => void;
 };
 
 function Controller(props: ControllerProps): React.ReactElement {
   const onPress = (xChange: number, yChange: number) => {
     return () => {
-      const newX = props.coordinate.x + xChange * 10;
-      const newY = props.coordinate.y + yChange * 10;
-      AsyncStorage.setItem(props.calibrationPoint + 'CalibrationX', '' + newX);
-      AsyncStorage.setItem(props.calibrationPoint + 'CalibrationY', '' + newY);
-      props.setCoordinate({
-        x: newX,
-        y: newY,
+      const diffX = xChange * 10;
+      const diffY = yChange * 10;
+      props.onChange({
+        x: diffX,
+        y: diffY,
       });
     };
   };
@@ -249,4 +323,8 @@ const roundButton: ViewStyle = {
   borderWidth: 1,
   borderColor: '#55C3F0',
   justifyContent: 'center',
+};
+
+const selectedButton: ViewStyle = {
+  backgroundColor: '#55C3F0',
 };
