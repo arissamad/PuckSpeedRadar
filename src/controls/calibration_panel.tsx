@@ -2,12 +2,13 @@ import AsyncStorage from '@react-native-community/async-storage';
 import React, {useEffect, useState} from 'react';
 import {Button, Image, ImageStyle, Text, View, ViewStyle} from 'react-native';
 import {imageHeight, imageWidth} from '../camera/my_camera';
+import Bounds from './bounds';
 
 type Props = {
   showPanel: boolean;
 };
 
-type Coordinate = {
+export type Coordinate = {
   x: number;
   y: number;
 };
@@ -23,6 +24,12 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
     y: imageHeight / 2,
   });
 
+  const [upperLeftBoundary, setUpperLeftBoundary] = useState({x: 10, y: 10});
+  const [lowerRightBoundary, setLowerRightBoundary] = useState({
+    x: 100,
+    y: 100,
+  });
+
   const [loadedCalibrationPoint, setLoadedCalibrationPoint] = useState(false);
 
   useEffect(() => {
@@ -36,14 +43,24 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
       const rightCalibrationY =
         (await AsyncStorage.getItem('rightCalibrationY')) ?? imageHeight / 2;
 
+      const boundsX1 = (await AsyncStorage.getItem('boundsX1')) ?? 10;
+      const boundsY1 = (await AsyncStorage.getItem('boundsY1')) ?? 10;
+      const boundsX2 = (await AsyncStorage.getItem('boundsX2')) ?? 100;
+      const boundsY2 = (await AsyncStorage.getItem('boundsY2')) ?? 100;
+
       setLeftCalibrationPoint({
         x: Number(leftCalibrationX),
         y: Number(leftCalibrationY),
       });
+
       setRightCalibrationPoint({
         x: Number(rightCalibrationX),
         y: Number(rightCalibrationY),
       });
+
+      setUpperLeftBoundary({x: Number(boundsX1), y: Number(boundsY1)});
+      setLowerRightBoundary({x: Number(boundsX2), y: Number(boundsY2)});
+
       setLoadedCalibrationPoint(true);
 
       console.log('loaded calibration points');
@@ -56,6 +73,9 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
   }
 
   const onPressReset = () => {};
+
+  console.log('upper left', upperLeftBoundary);
+  console.log('lower right', lowerRightBoundary);
 
   const source = {};
   return (
@@ -80,6 +100,9 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
         <View style={crossHairVertical}></View>
         <View style={crossHairHorizontal}></View>
       </View>
+      <Bounds
+        upperLeftBoundary={upperLeftBoundary}
+        lowerRightBoundary={lowerRightBoundary}></Bounds>
       <Image style={imageStyle} source={source}></Image>
       <View style={panelView}>
         <View style={twoControllerHolder}>
