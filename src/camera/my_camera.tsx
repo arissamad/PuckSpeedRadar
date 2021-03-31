@@ -7,6 +7,7 @@ type Props = {
   showCamera: boolean;
   cameraConfig: CameraConfig;
   cameraRef: RefObject<Camera>;
+  fps: number;
 };
 
 export default function MyCamera(props: Props): React.ReactElement {
@@ -27,15 +28,18 @@ export default function MyCamera(props: Props): React.ReactElement {
         style={StyleSheet.absoluteFill}
         device={cameraConfig.camera}
         format={cameraConfig.format}
-        fps={60}
+        fps={props.fps}
         isActive={true}
       />
     </View>
   );
 }
 
-export const imageWidth = 1280 / 2;
-export const imageHeight = 720 / 2;
+// Given the video size, this is the factor to convert it to React dimensions for display on the phone
+export const imageResizeFactor = 0.5;
+
+export const imageWidth = 1280 * imageResizeFactor;
+export const imageHeight = 720 * imageResizeFactor;
 
 const translateX = imageWidth / 2 - imageHeight / 2;
 
@@ -56,9 +60,6 @@ const styles = StyleSheet.create({
   cameraView: {
     position: 'relative',
     backgroundColor: 'grey',
-    //width: imageHeight,
-    //height: imageWidth,
-    //transform: [{rotateZ: '90deg'}, {translateX: -translateX}],
     width: imageWidth,
     height: imageHeight,
     borderColor: '#ff0000',

@@ -17,16 +17,25 @@ class ImageProcessor: NSObject {
   
   var previousImage: Image<UInt8>?;
   
-  @objc func process(_ uri: String, x1 x1NS: NSNumber, y1 y1NS: NSNumber, x2 x2NS: NSNumber, y2 y2NS: NSNumber) {
+  @objc func process(_ uri: String, fps fpsNS: NSNumber, duration durationNS: NSNumber, x1 x1NS: NSNumber, y1 y1NS: NSNumber, x2 x2NS: NSNumber, y2 y2NS: NSNumber) {
+    let fps = fpsNS as! Int;
+    let duration = durationNS as! Double;
     let x1 = x1NS as! Int;
     let y1 = y1NS as! Int;
     let x2 = x2NS as! Int;
     let y2 = y2NS as! Int;
+    
     print("Starting image processing with " + uri, x1, y1, x2, y2);
+    print("FPS:", fps);
+    print("Duration:", duration);
+    
+    let lastFrame = (duration * Double(fps)) - 3; // No need to consider the last few frames
+    
+    print("Last frame:", lastFrame);
     
     var timesAsNSValue = [NSNumber]();
-    for i in stride(from: 55, to: 63, by: 1) {
-      let cmTime = CMTime(value: Int64(i), timescale: 60);
+    for i in stride(from: 0, to: lastFrame, by: 1) {
+      let cmTime = CMTime(value: Int64(i), timescale: CMTimeScale(fps));
       let nsNumber = NSNumber(time: cmTime);
       timesAsNSValue.append(nsNumber);
     }
@@ -37,7 +46,7 @@ class ImageProcessor: NSObject {
     var i = 0;
     let timeStart = CFAbsoluteTimeGetCurrent();
     assetImageGenerator.generateCGImagesAsynchronously(forTimes: timesAsNSValue) { (requestedTime: CMTime, image: CGImage?, actualTime: CMTime, result: AVAssetImageGenerator.Result, error: Error?) in
-      print("Got async image requestedTime = \(requestedTime.seconds) at actual time \(actualTime.seconds)");
+      print("Got async image i=\(i) requestedTime = \(requestedTime.seconds) at actual time \(actualTime.seconds)");
       
       self.processImage(cgImage: image!, i: i, x1, y1, x2, y2);
       i += 1;
@@ -67,31 +76,20 @@ class ImageProcessor: NSObject {
     
     let t1 = CFAbsoluteTimeGetCurrent();
     
-    let t2 = CFAbsoluteTimeGetCurrent();
-    
-    print("Dimensions of image: \(cgImage.width) \(cgImage.height)");
-    
     let croppedCgImage = cgImage.cropping(to: CGRect(x: x1, y: y1, width: croppedWidth, height: croppedHeight));
     
-    let t3 = CFAbsoluteTimeGetCurrent();
-    
-    print("  1. retrieved image with dimensions (\(croppedCgImage!.width), \(croppedCgImage!.height))");
+    let t2 = CFAbsoluteTimeGetCurrent();
     
     var swiftImage = Image<RGBA<UInt8>>(cgImage: croppedCgImage!);
     
-    let t4 = CFAbsoluteTimeGetCurrent();
-    print("  2. processed uiImage into originalImage");
+    let t3 = CFAbsoluteTimeGetCurrent();
     
     let grayImage = swiftImage.map({ $0.gray })
-    let t5 = CFAbsoluteTimeGetCurrent();
-    print("  3. cropped image and converted to grayscale");
+    let t4 = CFAbsoluteTimeGetCurrent();
     
     var newImageUrl: URL?;
     let blobLabeler: BlobLabeler = BlobLabeler();
     if(previousImage != nil) {
-      print("    - previousImage is available");
-      print("grayImage dimensions: \(grayImage.width), \(grayImage.height)");
-      print("previousImage dimensions: \(previousImage!.width), \(previousImage!.height)");
       var diffImage = Image<Bool>(width: croppedWidth, height: croppedHeight, pixel: false);
       for x in stride(from: 0, to: croppedWidth, by: 1) {
         for y in stride(from: 0, to: croppedHeight, by: 1) {
@@ -100,10 +98,8 @@ class ImageProcessor: NSObject {
           var diff: UInt8;
           if(g > p) {
             diff = g-p;
-            //diffImage[x, y] = g-p;
           } else {
             diff = p-g;
-            //diffImage[x, y] = p-g;
           }
           
           if(diff > 20) { // 40 is conservative value, 20 is aggressive value.
@@ -126,7 +122,9 @@ class ImageProcessor: NSObject {
           let x = xPoints[i];
           let y = yPoints[i];
           
-          swiftImage[x, y] = RGBA<UInt8>(red: 255, green: 0, blue: 0);
+          var limitedPoint = self.limitCoordinate(BPoint(x, y), croppedWidth, croppedHeight);
+          
+          swiftImage[limitedPoint.getX(), limitedPoint.getY()] = RGBA<UInt8>(red: 255, green: 0, blue: 0);
         }
         
         let cog = blob.getCenterOfGravity();
@@ -150,32 +148,27 @@ class ImageProcessor: NSObject {
       print("    - previousImage is nil");
       newImageUrl = self.saveImage(grayImage.uiImage, name: "my_image_\(i)");
     }
-    let t6 = CFAbsoluteTimeGetCurrent();
+    let t5 = CFAbsoluteTimeGetCurrent();
       
     previousImage = grayImage;
     
-    print("  5. saved image URL is \(newImageUrl!)");
     let urlAsString = "\(newImageUrl!)";
     
     DispatchQueue.main.sync {
       let myEventEmitter = self.bridge.module(for: MyEventEmitter.self) as? MyEventEmitter
       myEventEmitter!.sendEvent(withName: "image-available", body: urlAsString);
-      print("  6. (main queue) Sent event to JS.");
     }
-    let t7 = CFAbsoluteTimeGetCurrent();
+    let t6 = CFAbsoluteTimeGetCurrent();
     
     let d1 = t2-t1;
     let d2 = t3-t2;
     let d3 = t4-t3;
     let d4 = t5-t4;
     let d5 = t6-t5;
-    let d6 = t7-t6;
-    let totalTime = t7 - t1;
+    let totalTime = t6 - t1;
     
-    print("d1=\(d1) d2=\(d2) d3=\(d3) d4=\(d4) d5=\(d5) d6=\(d6) total=\(totalTime)")
+    //print("d1=\(d1) d2=\(d2) d3=\(d3) d4=\(d4) d5=\(d5) total=\(totalTime)")
     
-    print("  7. Now sleeping.");
-  
     //Thread.sleep(foimeInterval: 0.25)
   }
   
@@ -184,13 +177,13 @@ class ImageProcessor: NSObject {
     var y = point.getY();
     
     if(x > width - 1) {
-      x = width-1;
+      x = width - 1;
     }
     if(x < 0) {
       x = 0;
     }
     if(y > height-1) {
-      y = height;
+      y = height - 1;
     }
     if(y < 0) {
       y = 0;
@@ -211,8 +204,8 @@ class ImageProcessor: NSObject {
     return assetIG;
   }
   
-  func imageFromVideo(assetIG: AVAssetImageGenerator, at time: CMTimeValue) -> CGImage? {
-    let cmTime = CMTime(value: time, timescale: 60)
+  func imageFromVideo(assetIG: AVAssetImageGenerator, atFrame time: CMTimeValue, fps: CMTimeScale) -> CGImage? {
+    let cmTime = CMTime(value: time, timescale: fps)
     let thumbnailImageRef: CGImage
     do {
       var actualTime: CMTime = CMTime();

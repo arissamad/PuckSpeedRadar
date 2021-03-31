@@ -4,11 +4,12 @@ import {Button, StyleSheet, View} from 'react-native';
 type Props = {
   title: string;
   onPress: () => void;
+  style?: {[key: string]: any};
 };
 
 export default function ControlButton(props: Props): React.ReactElement {
   return (
-    <View style={styles.buttonStyle}>
+    <View style={{...styles.buttonStyle, ...props.style}}>
       <Button
         onPress={props.onPress}
         title={props.title}

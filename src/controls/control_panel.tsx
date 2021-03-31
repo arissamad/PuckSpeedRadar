@@ -5,13 +5,24 @@ import ControlButton from './control_button';
 type Props = {
   onPressCalibrate: () => void;
   onPressRecord: () => void;
+  onPressStop: () => void;
+  isRecording: boolean;
 };
 
 export default function ControlPanel(props: Props): React.ReactElement {
   return (
     <View style={styles.overallView}>
       <ControlButton title="Calibrate" onPress={props.onPressCalibrate} />
-      <ControlButton title="Record" onPress={props.onPressRecord} />
+      {!props.isRecording && (
+        <ControlButton title="Record" onPress={props.onPressRecord} />
+      )}
+      {props.isRecording && (
+        <ControlButton
+          style={{backgroundColor: 'rgba(255,0,0,0.5)'}}
+          title="Stop"
+          onPress={props.onPressStop}
+        />
+      )}
     </View>
   );
 }

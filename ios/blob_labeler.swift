@@ -319,11 +319,7 @@ class BlobLabeler {
     
     var i=0;
     for blob in allBlobs {
-      print("Blob \(i): ");
-      print("  CG: \(blob.getCenterOfGravity().getX()), \(blob.getCenterOfGravity().getY())");
-      print("  Area: \(blob.getArea())");
-      print("  Perimeter: \(blob.getPerimeter())");
-      print("  Circularity: \(blob.getCircularity())");
+      print("  Blob \(i): CG: \(blob.getCenterOfGravity().getX()), \(blob.getCenterOfGravity().getY()) Area: \(blob.getArea()) Perimeter: \(blob.getPerimeter()) Circularity: \(blob.getCircularity())");
       
       i += 1;
     }

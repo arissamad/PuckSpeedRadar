@@ -29,11 +29,16 @@ import getCameraConfiguration, {
   CameraConfig,
 } from './src/camera/get_camera_configuration';
 import getPermissions from './src/camera/get_permissions';
-import MyCamera, {imageHeight, imageWidth} from './src/camera/my_camera';
+import MyCamera, {
+  imageHeight,
+  imageResizeFactor,
+  imageWidth,
+} from './src/camera/my_camera';
 import CalibrationPanel from './src/controls/calibration_panel';
 import ControlPanel from './src/controls/control_panel';
 import StatusBox from './src/status/status_box';
 
+const fps = 60;
 const App = () => {
   const [
     cameraConfiguration,
@@ -115,13 +120,51 @@ const App = () => {
 
   const [isRecording, setIsRecording] = useState(false);
   const clickedRecord = () => {
-    if (!isRecording) {
-      recordVideo();
-      setIsRecording(true);
-    } else {
-      stopVideoRecording();
-      setIsRecording(false);
-    }
+    recordVideo();
+    setIsRecording(true);
+  };
+
+  const clickedStop = () => {
+    stopVideoRecording();
+    setIsRecording(false);
+  };
+
+  const analyze = (uri: string, duration: number) => {
+    AsyncStorage.multiGet(
+      ['boundsX1', 'boundsY1', 'boundsX2', 'boundsY2'],
+      (errors, results) => {
+        console.log('Any errors during AsyncStorage.multiGet: ', errors);
+        if (results == null) {
+          return;
+        }
+        const boundsX1 = Number(results[0][1]) / imageResizeFactor;
+        const boundsY1 = Number(results[1][1]) / imageResizeFactor;
+        const boundsX2 = Number(results[2][1]) / imageResizeFactor;
+        const boundsY2 = Number(results[3][1]) / imageResizeFactor;
+
+        console.log('bounds', boundsX1, boundsY1, boundsX2, boundsY2);
+
+        NativeModules.ImageProcessor.process(
+          uri,
+          fps,
+          duration,
+          boundsX1,
+          boundsY1,
+          boundsX2,
+          boundsY2,
+        );
+      },
+    );
+  };
+
+  const [lastVideoDetails, setLastVideoDetails] = useState<VideoDetails>({
+    uri: '',
+    duration: 0,
+  });
+
+  type VideoDetails = {
+    uri: string;
+    duration: number;
   };
 
   const recordVideo = () => {
@@ -129,30 +172,11 @@ const App = () => {
       onRecordingFinished: (video) => {
         console.log('Got video:', video);
         var path = video.path;
-
-        AsyncStorage.multiGet(
-          ['boundsX1', 'boundsY1', 'boundsX2', 'boundsY2'],
-          (errors, results) => {
-            console.log('Any errors during AsyncStorage.multiGet: ', errors);
-            if (results == null) {
-              return;
-            }
-            const boundsX1 = Number(results[0][1]);
-            const boundsY1 = Number(results[1][1]);
-            const boundsX2 = Number(results[2][1]);
-            const boundsY2 = Number(results[3][1]);
-
-            console.log('bounds', boundsX1, boundsY1, boundsX2, boundsY2);
-
-            NativeModules.ImageProcessor.process(
-              video.path,
-              boundsX1,
-              boundsY1,
-              boundsX2,
-              boundsY2,
-            );
-          },
-        );
+        setLastVideoDetails({
+          uri: video.path,
+          duration: video.duration,
+        });
+        analyze(video.path, video.duration);
       },
       onRecordingError: (error) => console.error('Error recording:', error),
     });
@@ -160,6 +184,10 @@ const App = () => {
 
   const stopVideoRecording = () => {
     cameraRef.current?.stopRecording();
+  };
+
+  const rerunAnalysis = () => {
+    analyze(lastVideoDetails.uri, lastVideoDetails.duration);
   };
 
   // if (cameraConfiguration == undefined) {
@@ -191,7 +219,8 @@ const App = () => {
                 <MyCamera
                   showCamera={showCamera}
                   cameraConfig={cameraConfiguration as CameraConfig}
-                  cameraRef={cameraRef}></MyCamera>
+                  cameraRef={cameraRef}
+                  fps={fps}></MyCamera>
               </View>
             </View>
 
@@ -199,6 +228,8 @@ const App = () => {
               <ControlPanel
                 onPressCalibrate={clickedCalibrate}
                 onPressRecord={clickedRecord}
+                onPressStop={clickedStop}
+                isRecording={isRecording}
               />
             </View>
 
@@ -213,11 +244,22 @@ const App = () => {
             <View style={styles.centerContent}>
               <Image
                 source={{uri: photoUri}}
-                style={{width: imageWidth, height: imageHeight}}
+                style={{
+                  width: imageWidth,
+                  height: imageHeight,
+                  borderColor: 'red',
+                }}
+                resizeMode={'contain'}
               />
             </View>
 
             <View style={styles.sectionContainer}>
+              <Button
+                onPress={rerunAnalysis}
+                title="Rerun Last Analysis"
+                color="#841584"
+              />
+
               <Button
                 onPress={callSwiftWithSimulatorVideo}
                 title="Call swift (Simulator Videos)"
