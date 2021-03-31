@@ -51,11 +51,11 @@ class ImageProcessor: NSObject {
     
 //    DispatchQueue.global(qos: .utility).async {
 //      let timeStart = CFAbsoluteTimeGetCurrent();
-//      
+//
 //      for i in stride(from: 55, to: 63, by: 1) {
 //        print("-------------");
 //        print("NEW LOOP i=\(i)");
-//        
+//
 //        let cgImage = self.imageFromVideo(assetIG: assetImageGenerator, at: Int64(i));
 //        self.processImage(cgImage: cgImage!, i: i);
 //      } // for
@@ -66,6 +66,7 @@ class ImageProcessor: NSObject {
   }
   
   func processImage(cgImage: CGImage, i: Int) {
+    let val = kCGImagePropertyOrientation;
     let t1 = CFAbsoluteTimeGetCurrent();
     
     

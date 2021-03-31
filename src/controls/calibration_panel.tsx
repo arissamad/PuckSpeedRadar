@@ -243,12 +243,10 @@ function Controller(props: ControllerProps): React.ReactElement {
 }
 
 const imageStyle: ImageStyle = {
-  position: 'absolute',
-  width: imageHeight,
-  height: imageWidth,
+  width: imageWidth,
+  height: imageHeight,
   borderWidth: 1,
   borderColor: 'red',
-  transform: [{rotateZ: '90deg'}, {translateX: -imageHeight / 2}],
 };
 
 const crossHairPanel: ViewStyle = {

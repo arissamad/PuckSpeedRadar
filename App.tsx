@@ -76,6 +76,12 @@ const App = () => {
       ?.takePhoto()
       .then((snapshot: PhotoFile) => {
         console.log('got photo', snapshot.width, snapshot.height);
+        console.log('orientation', snapshot.metadata.Orientation);
+        console.log(
+          'exif pixelDimensions',
+          snapshot.metadata['{Exif}'].PixelXDimension,
+          snapshot.metadata['{Exif}'].PixelYDimension,
+        );
         setPhotoUri(snapshot.path);
       })
       .catch((e) => {
