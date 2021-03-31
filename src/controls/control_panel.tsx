@@ -4,17 +4,14 @@ import ControlButton from './control_button';
 
 type Props = {
   onPressCalibrate: () => void;
+  onPressRecord: () => void;
 };
 
 export default function ControlPanel(props: Props): React.ReactElement {
-  const onPressRecord = () => {
-    console.log('Pressed record');
-  };
-
   return (
     <View style={styles.overallView}>
       <ControlButton title="Calibrate" onPress={props.onPressCalibrate} />
-      <ControlButton title="Record" onPress={onPressRecord} />
+      <ControlButton title="Record" onPress={props.onPressRecord} />
     </View>
   );
 }

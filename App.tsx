@@ -8,15 +8,18 @@
  * @format
  */
 
+import AsyncStorage from '@react-native-community/async-storage';
 import React, {useEffect, useRef, useState} from 'react';
 import {
   Button,
+  Image,
   NativeEventEmitter,
   NativeModules,
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
+  Text,
   View,
 } from 'react-native';
 import {Camera, PhotoFile} from 'react-native-vision-camera';
@@ -26,7 +29,7 @@ import getCameraConfiguration, {
   CameraConfig,
 } from './src/camera/get_camera_configuration';
 import getPermissions from './src/camera/get_permissions';
-import MyCamera from './src/camera/my_camera';
+import MyCamera, {imageHeight, imageWidth} from './src/camera/my_camera';
 import CalibrationPanel from './src/controls/calibration_panel';
 import ControlPanel from './src/controls/control_panel';
 import StatusBox from './src/status/status_box';
@@ -94,31 +97,69 @@ const App = () => {
     NativeModules.Bulb.turnOn();
     NativeModules.ImageProcessor.process(
       'file:///Users/aris/Library/Developer/CoreSimulator/Devices/D5565BBE-48DA-4821-9086-EE9D54432BA4/data/Media/DCIM/100APPLE/IMG_0007.MOV',
-      (newImageUrl: string) => {
-        console.log('arguments', newImageUrl);
-        setPhotoUri(newImageUrl);
-      },
     );
   };
 
   const callSwiftWithSelectedVideo = () => {
     console.log('calling swift');
-    NativeModules.Bulb.turnOn();
-    NativeModules.ImageProcessor.process(
-      selectedVideoUri,
-      (newImageUrl: string) => {
-        console.log('arguments', newImageUrl);
-        setPhotoUri(newImageUrl);
-      },
-    );
+    NativeModules.ImageProcessor.process(selectedVideoUri);
   };
 
   const [showCalibrationPanel, setShowCalibrationPanel] = useState(false);
-  const clickedCalibration = () => {
+  const clickedCalibrate = () => {
     if (!showCalibrationPanel) {
       takePicture();
     }
     setShowCalibrationPanel(!showCalibrationPanel);
+  };
+
+  const [isRecording, setIsRecording] = useState(false);
+  const clickedRecord = () => {
+    if (!isRecording) {
+      recordVideo();
+      setIsRecording(true);
+    } else {
+      stopVideoRecording();
+      setIsRecording(false);
+    }
+  };
+
+  const recordVideo = () => {
+    cameraRef.current?.startRecording({
+      onRecordingFinished: (video) => {
+        console.log('Got video:', video);
+        var path = video.path;
+
+        AsyncStorage.multiGet(
+          ['boundsX1', 'boundsY1', 'boundsX2', 'boundsY2'],
+          (errors, results) => {
+            console.log('Any errors during AsyncStorage.multiGet: ', errors);
+            if (results == null) {
+              return;
+            }
+            const boundsX1 = Number(results[0][1]);
+            const boundsY1 = Number(results[1][1]);
+            const boundsX2 = Number(results[2][1]);
+            const boundsY2 = Number(results[3][1]);
+
+            console.log('bounds', boundsX1, boundsY1, boundsX2, boundsY2);
+
+            NativeModules.ImageProcessor.process(
+              video.path,
+              boundsX1,
+              boundsY1,
+              boundsX2,
+              boundsY2,
+            );
+          },
+        );
+      },
+      onRecordingError: (error) => console.error('Error recording:', error),
+    });
+  };
+
+  const stopVideoRecording = () => {
+    cameraRef.current?.stopRecording();
   };
 
   // if (cameraConfiguration == undefined) {
@@ -155,13 +196,25 @@ const App = () => {
             </View>
 
             <View style={styles.controlPanelHolder}>
-              <ControlPanel onPressCalibrate={clickedCalibration} />
+              <ControlPanel
+                onPressCalibrate={clickedCalibrate}
+                onPressRecord={clickedRecord}
+              />
             </View>
 
             <View style={styles.centerContent}>
               <CalibrationPanel
                 showPanel={showCalibrationPanel}
                 photoUri={photoUri}></CalibrationPanel>
+            </View>
+
+            <Text>Video Analysis</Text>
+
+            <View style={styles.centerContent}>
+              <Image
+                source={{uri: photoUri}}
+                style={{width: imageWidth, height: imageHeight}}
+              />
             </View>
 
             <View style={styles.sectionContainer}>

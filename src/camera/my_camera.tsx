@@ -27,7 +27,7 @@ export default function MyCamera(props: Props): React.ReactElement {
         style={StyleSheet.absoluteFill}
         device={cameraConfig.camera}
         format={cameraConfig.format}
-        fps={30}
+        fps={60}
         isActive={true}
       />
     </View>

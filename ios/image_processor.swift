@@ -15,18 +15,14 @@ import SwiftImage
 class ImageProcessor: NSObject {
   @objc var bridge: RCTBridge!
   
-  // 1070x210
-  let x1=830;
-  let x2=1900;
-  let y1=390;
-  let y2=600;
-  let width = 1900 - 830;
-  let height = 600 - 390;
-  
   var previousImage: Image<UInt8>?;
   
-  @objc func process(_ uri: String, callback successCallback: @escaping RCTResponseSenderBlock) {
-    print("Starting image processing with " + uri)
+  @objc func process(_ uri: String, x1 x1NS: NSNumber, y1 y1NS: NSNumber, x2 x2NS: NSNumber, y2 y2NS: NSNumber) {
+    let x1 = x1NS as! Int;
+    let y1 = y1NS as! Int;
+    let x2 = x2NS as! Int;
+    let y2 = y2NS as! Int;
+    print("Starting image processing with " + uri, x1, y1, x2, y2);
     
     var timesAsNSValue = [NSNumber]();
     for i in stride(from: 55, to: 63, by: 1) {
@@ -43,7 +39,7 @@ class ImageProcessor: NSObject {
     assetImageGenerator.generateCGImagesAsynchronously(forTimes: timesAsNSValue) { (requestedTime: CMTime, image: CGImage?, actualTime: CMTime, result: AVAssetImageGenerator.Result, error: Error?) in
       print("Got async image requestedTime = \(requestedTime.seconds) at actual time \(actualTime.seconds)");
       
-      self.processImage(cgImage: image!, i: i);
+      self.processImage(cgImage: image!, i: i, x1, y1, x2, y2);
       i += 1;
       let timeEnd = CFAbsoluteTimeGetCurrent();
       print("current total runtime=\(timeEnd - timeStart)")
@@ -65,14 +61,17 @@ class ImageProcessor: NSObject {
     print("Async job now running in separate thread. Main call done.");
   }
   
-  func processImage(cgImage: CGImage, i: Int) {
-    let val = kCGImagePropertyOrientation;
-    let t1 = CFAbsoluteTimeGetCurrent();
+  func processImage(cgImage: CGImage, i: Int, _ x1: Int, _ y1: Int, _ x2: Int, _ y2: Int) {
+    let croppedWidth = x2 - x1;
+    let croppedHeight = y2 - y1;
     
+    let t1 = CFAbsoluteTimeGetCurrent();
     
     let t2 = CFAbsoluteTimeGetCurrent();
     
-    let croppedCgImage = cgImage.cropping(to: CGRect(x: x1, y: y1, width: width, height: height));
+    print("Dimensions of image: \(cgImage.width) \(cgImage.height)");
+    
+    let croppedCgImage = cgImage.cropping(to: CGRect(x: x1, y: y1, width: croppedWidth, height: croppedHeight));
     
     let t3 = CFAbsoluteTimeGetCurrent();
     
@@ -93,9 +92,9 @@ class ImageProcessor: NSObject {
       print("    - previousImage is available");
       print("grayImage dimensions: \(grayImage.width), \(grayImage.height)");
       print("previousImage dimensions: \(previousImage!.width), \(previousImage!.height)");
-      var diffImage = Image<Bool>(width: width, height: height, pixel: false);
-      for x in stride(from: 0, to: width, by: 1) {
-        for y in stride(from: 0, to: height, by: 1) {
+      var diffImage = Image<Bool>(width: croppedWidth, height: croppedHeight, pixel: false);
+      for x in stride(from: 0, to: croppedWidth, by: 1) {
+        for y in stride(from: 0, to: croppedHeight, by: 1) {
           let g: UInt8 = grayImage[x, y];
           let p: UInt8 = previousImage![x, y];
           var diff: UInt8;
@@ -133,13 +132,13 @@ class ImageProcessor: NSObject {
         let cog = blob.getCenterOfGravity();
         for x in 0..<50 {
           let pointToDraw = BPoint(cog.getX() + x - 25, cog.getY());
-          let limitedPoint = self.limitCoordinate(pointToDraw, width, height);
+          let limitedPoint = self.limitCoordinate(pointToDraw, croppedWidth, croppedHeight);
           
           swiftImage[limitedPoint.getX(), limitedPoint.getY()] = RGBA<UInt8>(red: 0, green: 0, blue: 255);
         }
         for y in 0..<50 {
           let pointToDraw = BPoint(cog.getX(), cog.getY() + y - 25);
-          let limitedPoint = self.limitCoordinate(pointToDraw, width, height);
+          let limitedPoint = self.limitCoordinate(pointToDraw, croppedWidth, croppedHeight);
           
           swiftImage[limitedPoint.getX(), limitedPoint.getY()] = RGBA<UInt8>(red: 0, green: 0, blue: 255);
         }
@@ -157,10 +156,6 @@ class ImageProcessor: NSObject {
     
     print("  5. saved image URL is \(newImageUrl!)");
     let urlAsString = "\(newImageUrl!)";
-    
-//        print("about to callback");
-//        //successCallback([urlAsString]);
-//        print("called back! Now dispatching event.");
     
     DispatchQueue.main.sync {
       let myEventEmitter = self.bridge.module(for: MyEventEmitter.self) as? MyEventEmitter
