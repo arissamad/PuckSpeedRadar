@@ -40,6 +40,8 @@ import ControlPanel from './src/controls/control_panel';
 import StatusBox from './src/status/status_box';
 import calculateCalibration from './src/utils/calculate_calibration';
 import playEndSound from './src/utils/play_end_sound';
+import playStartSound from './src/utils/play_start_sound';
+import sleep from './src/utils/sleep';
 
 const fps = 60;
 const calibrationStickLengthInM = 1;
@@ -128,7 +130,6 @@ const App = () => {
 
   const clickedStop = () => {
     stopVideoRecording();
-    setIsRecording(false);
   };
 
   const analyze = (uri: string, duration: number) => {
@@ -205,23 +206,50 @@ const App = () => {
     duration: number;
   };
 
-  const recordVideo = () => {
-    cameraRef.current?.startRecording({
-      onRecordingFinished: (video) => {
-        console.log('Got video:', video);
-        var path = video.path;
-        setLastVideoDetails({
-          uri: video.path,
-          duration: video.duration,
-        });
-        analyze(video.path, video.duration);
-      },
-      onRecordingError: (error) => console.error('Error recording:', error),
+  const [timer, setTimer] = useState(0);
+
+  const executeSingleRecordingSequence = async () => {
+    console.log('Playing start sound...');
+    await playStartSound();
+
+    console.log('Starting video recording...');
+    const promise = new Promise<void>((resolve, reject) => {
+      cameraRef.current?.startRecording({
+        onRecordingFinished: (video) => {
+          console.log('Got video:', video);
+          resolve();
+          var path = video.path;
+          setLastVideoDetails({
+            uri: video.path,
+            duration: video.duration,
+          });
+          analyze(video.path, video.duration);
+        },
+        onRecordingError: (error) => {
+          console.error('Error recording:', error);
+          reject();
+        },
+      });
+
+      setTimeout(() => {
+        console.log('Got timeout to stop video recording');
+        stopVideoRecording();
+      }, 2000);
     });
+
+    await promise;
+
+    console.log('Now playing end sound');
+    await playEndSound();
+  };
+
+  const recordVideo = () => {
+    executeSingleRecordingSequence();
   };
 
   const stopVideoRecording = () => {
     cameraRef.current?.stopRecording();
+    setIsRecording(false);
   };
 
   const rerunAnalysis = () => {
@@ -229,8 +257,10 @@ const App = () => {
   };
 
   const playSound = async () => {
-    playEndSound();
-    // for (var i = 1117; i < 1118; i++) {
+    await playStartSound();
+    await sleep(5000);
+    await playEndSound();
+    // for (var i = 1109; i < 1119; i++) {
     //   console.log('Playing', i);
     //   RNBeep.PlaySysSound(i);
     //   await new Promise((r) => setTimeout(r, 2000));
@@ -293,15 +323,17 @@ const App = () => {
             <Text>Video Analysis</Text>
 
             <View style={styles.centerContent}>
-              <Image
-                source={{uri: photoUri}}
-                style={{
-                  width: imageWidth,
-                  height: imageHeight,
-                  borderColor: 'red',
-                }}
-                resizeMode={'contain'}
-              />
+              {photoUri != '' && (
+                <Image
+                  source={{uri: photoUri}}
+                  style={{
+                    width: imageWidth,
+                    height: imageHeight,
+                    borderColor: 'red',
+                  }}
+                  resizeMode={'contain'}
+                />
+              )}
             </View>
 
             <View style={styles.sectionContainer}>

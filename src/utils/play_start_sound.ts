@@ -3,8 +3,8 @@ import sleep from './sleep';
 
 export default async function playStartSound(): Promise<void> {
   for (var i = 0; i < 3; i++) {
-    RNBeep.PlaySysSound(1103);
+    RNBeep.PlaySysSound(1110);
     await sleep(1000);
   }
-  await RNBeep.PlaySysSound(1117);
+  await RNBeep.PlaySysSound(1111);
 }
