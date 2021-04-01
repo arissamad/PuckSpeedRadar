@@ -1,7 +1,17 @@
 import AsyncStorage from '@react-native-community/async-storage';
 import React, {useEffect, useState} from 'react';
-import {Button, Image, ImageStyle, View, ViewStyle} from 'react-native';
+import {
+  Button,
+  Image,
+  ImageStyle,
+  Text,
+  TextInput,
+  TextStyle,
+  View,
+  ViewStyle,
+} from 'react-native';
 import {imageHeight, imageWidth} from '../camera/my_camera';
+import {leftAlignedRow} from '../utils/common_styles';
 import Bounds from './bounds';
 
 type Props = {
@@ -37,6 +47,8 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
 
   const [calibrationMode, setCalibrationMode] = useState<CalibrationMode>('c1');
 
+  const [name, setName] = useState('');
+
   useEffect(() => {
     const loadCalibrationPoints = async () => {
       const leftCalibrationX =
@@ -53,6 +65,8 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
       const boundsX2 = (await AsyncStorage.getItem('boundsX2')) ?? 100;
       const boundsY2 = (await AsyncStorage.getItem('boundsY2')) ?? 100;
 
+      const name = (await AsyncStorage.getItem('name')) ?? 'Aris';
+
       setLeftCalibrationPoint({
         x: Number(leftCalibrationX),
         y: Number(leftCalibrationY),
@@ -67,6 +81,8 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
       setLowerRightBoundary({x: Number(boundsX2), y: Number(boundsY2)});
 
       setLoadedCalibrationPoint(true);
+
+      setName(name);
 
       console.log('loaded calibration points');
     };
@@ -128,6 +144,11 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
         AsyncStorage.setItem('boundsY2', '' + newY);
         break;
     }
+  };
+
+  const updateName = (name: string) => {
+    setName(name);
+    AsyncStorage.setItem('name', name);
   };
 
   const source = {
@@ -199,6 +220,13 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
               }}></Button>
           </View>
         </View>
+      </View>
+      <View style={[leftAlignedRow, {marginTop: 10}]}>
+        <Text style={textLabelStyle}>Name:</Text>
+        <TextInput
+          style={textInputStyle}
+          defaultValue={name}
+          onChangeText={updateName}></TextInput>
       </View>
     </View>
   );
@@ -331,4 +359,17 @@ const roundButton: ViewStyle = {
 
 const selectedButton: ViewStyle = {
   backgroundColor: '#55C3F0',
+};
+
+const textLabelStyle: TextStyle = {
+  fontSize: 20,
+};
+
+const textInputStyle: TextStyle = {
+  borderColor: 'grey',
+  borderWidth: 1,
+  padding: 5,
+  fontSize: 20,
+  marginLeft: 10,
+  flexGrow: 1,
 };

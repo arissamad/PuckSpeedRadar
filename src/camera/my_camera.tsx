@@ -35,7 +35,7 @@ export default function MyCamera(props: Props): React.ReactElement {
   );
 }
 
-// Given the video size, this is the factor to convert it to React dimensions for display on the phone
+// Given the video size, this is the factor to convert video dimensions to screen dimensions
 export const imageResizeFactor = 0.5;
 
 export const imageWidth = 1280 * imageResizeFactor;

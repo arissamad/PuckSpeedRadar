@@ -22,9 +22,10 @@ import {
   Text,
   View,
 } from 'react-native';
+import RNBeep from 'react-native-a-beep';
 import {Camera, PhotoFile} from 'react-native-vision-camera';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-import broadcastSpeed2 from './src/broadcaster/firestore_broadcaster';
+import broadcastSpeed from './src/broadcaster/firestore_broadcaster';
 import getCameraConfiguration, {
   CameraConfig,
 } from './src/camera/get_camera_configuration';
@@ -37,8 +38,12 @@ import MyCamera, {
 import CalibrationPanel from './src/controls/calibration_panel';
 import ControlPanel from './src/controls/control_panel';
 import StatusBox from './src/status/status_box';
+import calculateCalibration from './src/utils/calculate_calibration';
+import playEndSound from './src/utils/play_end_sound';
 
 const fps = 60;
+const calibrationStickLengthInM = 1;
+
 const App = () => {
   const [
     cameraConfiguration,
@@ -46,16 +51,24 @@ const App = () => {
   ] = useState<CameraConfig>();
 
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const [name, setName] = useState('');
 
   useEffect(() => {
     getPermissions(setPermissionGranted);
     getCameraConfiguration(setCameraConfiguration);
 
-    const nativeEventEmitter = new NativeEventEmitter(
+    const imageAvailableEventEmitter = new NativeEventEmitter(
       NativeModules.MyEventEmitter,
     );
-    nativeEventEmitter.addListener('image-available', (imageUrl) => {
+    imageAvailableEventEmitter.addListener('image-available', (imageUrl) => {
       setPhotoUri(imageUrl);
+    });
+
+    const speedEventEmitter = new NativeEventEmitter(
+      NativeModules.SpeedEventEmitter,
+    );
+    speedEventEmitter.addListener('speed-available', (speed: number) => {
+      broadcastSpeed(name, speed);
     });
 
     console.log('We are now listening to image-available');
@@ -71,12 +84,7 @@ const App = () => {
     }
   };
 
-  const broadcastSpeed = () => {
-    broadcastSpeed2(5);
-  };
-
   const [photoUri, setPhotoUri] = useState('');
-  const [selectedVideoUri, setVideoUri] = useState('');
 
   const cameraRef = useRef<Camera>(null);
   const takePicture = () => {
@@ -98,16 +106,10 @@ const App = () => {
   };
 
   const callSwiftWithSimulatorVideo = () => {
-    console.log('calling swift');
-    NativeModules.Bulb.turnOn();
-    NativeModules.ImageProcessor.process(
+    analyze(
       'file:///Users/aris/Library/Developer/CoreSimulator/Devices/D5565BBE-48DA-4821-9086-EE9D54432BA4/data/Media/DCIM/100APPLE/IMG_0007.MOV',
+      1.0,
     );
-  };
-
-  const callSwiftWithSelectedVideo = () => {
-    console.log('calling swift');
-    NativeModules.ImageProcessor.process(selectedVideoUri);
   };
 
   const [showCalibrationPanel, setShowCalibrationPanel] = useState(false);
@@ -131,23 +133,59 @@ const App = () => {
 
   const analyze = (uri: string, duration: number) => {
     AsyncStorage.multiGet(
-      ['boundsX1', 'boundsY1', 'boundsX2', 'boundsY2'],
+      [
+        'leftCalibrationX',
+        'leftCalibrationY',
+        'rightCalibrationX',
+        'rightCalibrationY',
+        'boundsX1',
+        'boundsY1',
+        'boundsX2',
+        'boundsY2',
+        'name',
+      ],
       (errors, results) => {
         console.log('Any errors during AsyncStorage.multiGet: ', errors);
         if (results == null) {
           return;
         }
-        const boundsX1 = Number(results[0][1]) / imageResizeFactor;
-        const boundsY1 = Number(results[1][1]) / imageResizeFactor;
-        const boundsX2 = Number(results[2][1]) / imageResizeFactor;
-        const boundsY2 = Number(results[3][1]) / imageResizeFactor;
 
+        const leftCalibrationX = Number(results[0][1]);
+        const leftCalibrationY = Number(results[1][1]);
+        const rightCalibrationX = Number(results[2][1]);
+        const rightCalibrationY = Number(results[3][1]);
+
+        const boundsX1 = Number(results[4][1]) / imageResizeFactor;
+        const boundsY1 = Number(results[5][1]) / imageResizeFactor;
+        const boundsX2 = Number(results[6][1]) / imageResizeFactor;
+        const boundsY2 = Number(results[7][1]) / imageResizeFactor;
+
+        const name = results[8][1];
+        setName(name ?? 'Aris');
+
+        console.log(
+          'calibration points',
+          leftCalibrationX,
+          leftCalibrationY,
+          rightCalibrationX,
+          rightCalibrationY,
+        );
         console.log('bounds', boundsX1, boundsY1, boundsX2, boundsY2);
+
+        const pixelsPerMeter = calculateCalibration(
+          leftCalibrationX,
+          leftCalibrationY,
+          rightCalibrationX,
+          rightCalibrationY,
+          calibrationStickLengthInM,
+          imageResizeFactor,
+        );
 
         NativeModules.ImageProcessor.process(
           uri,
           fps,
           duration,
+          pixelsPerMeter,
           boundsX1,
           boundsY1,
           boundsX2,
@@ -188,6 +226,19 @@ const App = () => {
 
   const rerunAnalysis = () => {
     analyze(lastVideoDetails.uri, lastVideoDetails.duration);
+  };
+
+  const playSound = async () => {
+    playEndSound();
+    // for (var i = 1117; i < 1118; i++) {
+    //   console.log('Playing', i);
+    //   RNBeep.PlaySysSound(i);
+    //   await new Promise((r) => setTimeout(r, 2000));
+    // }
+  };
+
+  const nothing = () => {
+    RNBeep.PlaySysSound(1100);
   };
 
   // if (cameraConfiguration == undefined) {
@@ -266,11 +317,7 @@ const App = () => {
                 color="#841584"
               />
 
-              <Button
-                onPress={callSwiftWithSelectedVideo}
-                title="Call swift (Selected Video)"
-                color="#841584"
-              />
+              <Button onPress={playSound} title="Play Sound" color="#841584" />
 
               <Button
                 onPress={takePicture}
@@ -282,12 +329,6 @@ const App = () => {
                 onPress={onPressLearnMore}
                 title="Toggle Status"
                 color="#841584"
-              />
-
-              <Button
-                onPress={broadcastSpeed}
-                title="Broadcast Speed"
-                color="#158484"
               />
 
               <View

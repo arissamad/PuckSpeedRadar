@@ -16,10 +16,21 @@ class ImageProcessor: NSObject {
   @objc var bridge: RCTBridge!
   
   var previousImage: Image<UInt8>?;
+  var previousTime: CMTime?;
   
-  @objc func process(_ uri: String, fps fpsNS: NSNumber, duration durationNS: NSNumber, x1 x1NS: NSNumber, y1 y1NS: NSNumber, x2 x2NS: NSNumber, y2 y2NS: NSNumber) {
+  @objc func process(
+    _ uri: String,
+    fps fpsNS: NSNumber,
+    duration durationNS: NSNumber,
+    pixelsPerMeter pixelsPerMeterNS: NSNumber,
+    x1 x1NS: NSNumber,
+    y1 y1NS: NSNumber,
+    x2 x2NS: NSNumber,
+    y2 y2NS: NSNumber)
+  {
     let fps = fpsNS as! Int;
     let duration = durationNS as! Double;
+    let pixelsPerMeter = pixelsPerMeterNS as! Int;
     let x1 = x1NS as! Int;
     let y1 = y1NS as! Int;
     let x2 = x2NS as! Int;
@@ -28,6 +39,7 @@ class ImageProcessor: NSObject {
     print("Starting image processing with " + uri, x1, y1, x2, y2);
     print("FPS:", fps);
     print("Duration:", duration);
+    print("Pixels per meter:", pixelsPerMeter);
     
     let lastFrame = (duration * Double(fps)) - 3; // No need to consider the last few frames
     
@@ -41,6 +53,7 @@ class ImageProcessor: NSObject {
     }
     
     previousImage = nil;
+    previousTime = nil;
     
     let assetImageGenerator = self.prepareAssetImageGenerator(url: URL(string: uri)!)
     var i = 0;
@@ -48,7 +61,7 @@ class ImageProcessor: NSObject {
     assetImageGenerator.generateCGImagesAsynchronously(forTimes: timesAsNSValue) { (requestedTime: CMTime, image: CGImage?, actualTime: CMTime, result: AVAssetImageGenerator.Result, error: Error?) in
       print("Got async image i=\(i) requestedTime = \(requestedTime.seconds) at actual time \(actualTime.seconds)");
       
-      self.processImage(cgImage: image!, i: i, x1, y1, x2, y2);
+      self.processImage(cgImage: image!, i: i, pixelsPerMeter: pixelsPerMeter, time: actualTime, x1, y1, x2, y2);
       i += 1;
       let timeEnd = CFAbsoluteTimeGetCurrent();
       print("current total runtime=\(timeEnd - timeStart)")
@@ -70,7 +83,7 @@ class ImageProcessor: NSObject {
     print("Async job now running in separate thread. Main call done.");
   }
   
-  func processImage(cgImage: CGImage, i: Int, _ x1: Int, _ y1: Int, _ x2: Int, _ y2: Int) {
+  func processImage(cgImage: CGImage, i: Int, pixelsPerMeter: Int, time: CMTime, _ x1: Int, _ y1: Int, _ x2: Int, _ y2: Int) {
     let croppedWidth = x2 - x1;
     let croppedHeight = y2 - y1;
     
@@ -113,7 +126,8 @@ class ImageProcessor: NSObject {
       blobLabeler.filterBlobs();
       blobLabeler.printDebuggingInfo();
       
-      for blob in blobLabeler.getBlobs() {
+      let blobs = blobLabeler.getBlobs();
+      for blob in blobs {
         let outerContour = blob.getOuterContour();
         
         let xPoints = outerContour.getXPoints();
@@ -141,6 +155,23 @@ class ImageProcessor: NSObject {
           swiftImage[limitedPoint.getX(), limitedPoint.getY()] = RGBA<UInt8>(red: 0, green: 0, blue: 255);
         }
       }
+      
+      if(blobs.count > 1) {
+        let cg1 = blobs[0].getCenterOfGravity();
+        let cg2 = blobs[1].getCenterOfGravity();
+        
+        let xDistance = cg2.getX() - cg1.getX();
+        let yDistance = cg2.getY() - cg1.getY();
+        
+        let distanceInPixels = Int(sqrt(Double(xDistance * xDistance + yDistance * yDistance)));
+        let distanceInMeters = Double(distanceInPixels) / Double(pixelsPerMeter);
+        
+        let timeDiff = time - previousTime!;
+        let speedInMetersPerSecond = distanceInMeters / timeDiff.seconds;
+        print("distanceInPixeles: \(distanceInPixels) distanceInMeters: \(distanceInMeters) timeDiff: \(timeDiff)");
+        
+        print("Speed: ", speedInMetersPerSecond);
+      }
 
       newImageUrl = self.saveImage(swiftImage.uiImage, name: "my_blob_\(i)");
       
@@ -151,6 +182,7 @@ class ImageProcessor: NSObject {
     let t5 = CFAbsoluteTimeGetCurrent();
       
     previousImage = grayImage;
+    previousTime = time;
     
     let urlAsString = "\(newImageUrl!)";
     

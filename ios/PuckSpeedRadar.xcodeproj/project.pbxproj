@@ -13,6 +13,8 @@
 		0B72CE13260EFA310023C574 /* polygon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B72CE12260EFA310023C574 /* polygon.swift */; };
 		0B72CE16260EFCA30023C574 /* bpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B72CE15260EFCA30023C574 /* bpoint.swift */; };
 		0B72CE19260F0D4E0023C574 /* blob_labeler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B72CE18260F0D4E0023C574 /* blob_labeler.swift */; };
+		0B72CF0C26158D650023C574 /* speed_event_emitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B72CF0B26158D650023C574 /* speed_event_emitter.swift */; };
+		0B72CF0F26158D760023C574 /* speed_event_emitter.m in Sources */ = {isa = PBXBuildFile; fileRef = 0B72CF0E26158D760023C574 /* speed_event_emitter.m */; };
 		0BF0A65F25FDD6AA00E3F762 /* test_objc_File.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A65E25FDD6AA00E3F762 /* test_objc_File.m */; };
 		0BF0A66825FDD8DE00E3F762 /* bulb.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A66725FDD8DE00E3F762 /* bulb.m */; };
 		0BF0A66E25FDDA0900E3F762 /* bulb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF0A66D25FDDA0900E3F762 /* bulb.swift */; };
@@ -37,6 +39,8 @@
 		0B72CE12260EFA310023C574 /* polygon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = polygon.swift; sourceTree = "<group>"; };
 		0B72CE15260EFCA30023C574 /* bpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bpoint.swift; sourceTree = "<group>"; };
 		0B72CE18260F0D4E0023C574 /* blob_labeler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = blob_labeler.swift; sourceTree = "<group>"; };
+		0B72CF0B26158D650023C574 /* speed_event_emitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = speed_event_emitter.swift; sourceTree = "<group>"; };
+		0B72CF0E26158D760023C574 /* speed_event_emitter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = speed_event_emitter.m; sourceTree = "<group>"; };
 		0BF0A65E25FDD6AA00E3F762 /* test_objc_File.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = test_objc_File.m; sourceTree = "<group>"; };
 		0BF0A66725FDD8DE00E3F762 /* bulb.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = bulb.m; sourceTree = "<group>"; };
 		0BF0A66D25FDDA0900E3F762 /* bulb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bulb.swift; sourceTree = "<group>"; };
@@ -129,6 +133,8 @@
 				0B72CE12260EFA310023C574 /* polygon.swift */,
 				0B72CE15260EFCA30023C574 /* bpoint.swift */,
 				0B72CE18260F0D4E0023C574 /* blob_labeler.swift */,
+				0B72CF0B26158D650023C574 /* speed_event_emitter.swift */,
+				0B72CF0E26158D760023C574 /* speed_event_emitter.m */,
 			);
 			name = PuckSpeedRadar;
 			sourceTree = "<group>";
@@ -369,9 +375,11 @@
 				0BF0A66825FDD8DE00E3F762 /* bulb.m in Sources */,
 				0B72CE10260EF96C0023C574 /* blob.swift in Sources */,
 				0BF0A67525FDE00400E3F762 /* image_processor.swift in Sources */,
+				0B72CF0C26158D650023C574 /* speed_event_emitter.swift in Sources */,
 				13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */,
 				0B72CE19260F0D4E0023C574 /* blob_labeler.swift in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
+				0B72CF0F26158D760023C574 /* speed_event_emitter.m in Sources */,
 				0BF0A65F25FDD6AA00E3F762 /* test_objc_File.m in Sources */,
 				0BF0A67D25FE6DD000E3F762 /* my_event_emitter.swift in Sources */,
 				0BF0A67825FDE08A00E3F762 /* image_processor.m in Sources */,
