@@ -17,6 +17,7 @@ class ImageProcessor: NSObject {
   
   var previousImage: Image<UInt8>?;
   var previousTime: CMTime?;
+  var speeds: [Double];
   
   @objc func process(
     _ uri: String,
@@ -54,17 +55,38 @@ class ImageProcessor: NSObject {
     
     previousImage = nil;
     previousTime = nil;
+    speeds = [];
     
     let assetImageGenerator = self.prepareAssetImageGenerator(url: URL(string: uri)!)
     var i = 0;
     let timeStart = CFAbsoluteTimeGetCurrent();
     assetImageGenerator.generateCGImagesAsynchronously(forTimes: timesAsNSValue) { (requestedTime: CMTime, image: CGImage?, actualTime: CMTime, result: AVAssetImageGenerator.Result, error: Error?) in
-      print("Got async image i=\(i) requestedTime = \(requestedTime.seconds) at actual time \(actualTime.seconds)");
+      
+      print("## image i=\(i) requestedTime = \(self.format(requestedTime.seconds)) actualTime \(self.format(actualTime.seconds))");
       
       self.processImage(cgImage: image!, i: i, pixelsPerMeter: pixelsPerMeter, time: actualTime, x1, y1, x2, y2);
       i += 1;
       let timeEnd = CFAbsoluteTimeGetCurrent();
-      print("current total runtime=\(timeEnd - timeStart)")
+      print("  current total runtime=\(self.format(timeEnd - timeStart))")
+      
+      if(i == Int(lastFrame) - 1) {
+        var total: Double = 0;
+        for speed in self.speeds {
+          total += speed;
+        }
+        let avgSpeed = total / Double(self.speeds.count);
+        
+        print(" ");
+        print("== DONE ==");
+        print("AVG SPEED = \(self.format(avgSpeed))")
+        print(" ");
+        
+        
+        DispatchQueue.main.sync {
+          let speedEventEmitter = self.bridge.module(for: SpeedEventEmitter.self) as? SpeedEventEmitter
+          speedEventEmitter!.sendEvent(withName: "speed-available", body: self.format(avgSpeed));
+        }
+      }
     }
     
 //    DispatchQueue.global(qos: .utility).async {
@@ -156,7 +178,7 @@ class ImageProcessor: NSObject {
         }
       }
       
-      if(blobs.count > 1) {
+      if(blobs.count == 2) {
         let cg1 = blobs[0].getCenterOfGravity();
         let cg2 = blobs[1].getCenterOfGravity();
         
@@ -168,9 +190,11 @@ class ImageProcessor: NSObject {
         
         let timeDiff = time - previousTime!;
         let speedInMetersPerSecond = distanceInMeters / timeDiff.seconds;
-        print("distanceInPixeles: \(distanceInPixels) distanceInMeters: \(distanceInMeters) timeDiff: \(timeDiff)");
+        print("  distanceInPixeles: \(distanceInPixels) distanceInMeters: \(self.format(distanceInMeters)) timeDiff: \(format(timeDiff.seconds))");
         
-        print("Speed: ", speedInMetersPerSecond);
+        print(String(format: "  --> Speed: %.5f", speedInMetersPerSecond));
+        
+        speeds.append(speedInMetersPerSecond);
       }
 
       newImageUrl = self.saveImage(swiftImage.uiImage, name: "my_blob_\(i)");
@@ -289,6 +313,9 @@ class ImageProcessor: NSObject {
         print("URL is \(urlAsset.unsafelyUnwrapped.url)");
       }
     }
+  }
+  func format(_ num: Double) -> String {
+    return String(format: "%.005f", num);
   }
   
 //  func drawLines(sImage: UnsafeMutablePointer<Image<RGBA<UInt8>>>, x1: Int, x2: Int, y1: Int, y2: Int, x: Int, y: Int) -> Void {

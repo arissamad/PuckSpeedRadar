@@ -70,6 +70,7 @@ const App = () => {
       NativeModules.SpeedEventEmitter,
     );
     speedEventEmitter.addListener('speed-available', (speed: number) => {
+      console.log('Got speed:', speed);
       broadcastSpeed(name, speed);
     });
 
