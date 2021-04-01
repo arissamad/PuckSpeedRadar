@@ -17,7 +17,7 @@ class ImageProcessor: NSObject {
   
   var previousImage: Image<UInt8>?;
   var previousTime: CMTime?;
-  var speeds: [Double];
+  var speeds: [Double] = [];
   
   @objc func process(
     _ uri: String,
@@ -70,15 +70,20 @@ class ImageProcessor: NSObject {
       print("  current total runtime=\(self.format(timeEnd - timeStart))")
       
       if(i == Int(lastFrame) - 1) {
-        var total: Double = 0;
-        for speed in self.speeds {
-          total += speed;
+        var avgSpeed: Double = 0;
+        
+        if(self.speeds.count > 0) {
+          var total: Double = 0;
+          for speed in self.speeds {
+            total += speed;
+          }
+          avgSpeed = total / Double(self.speeds.count);
         }
-        let avgSpeed = total / Double(self.speeds.count);
         
         print(" ");
         print("== DONE ==");
-        print("AVG SPEED = \(self.format(avgSpeed))")
+        print("Num speed readings:", self.speeds.count);
+        print("Average speed: \(self.format(avgSpeed))");
         print(" ");
         
         
