@@ -20,6 +20,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import RNBeep from 'react-native-a-beep';
@@ -39,6 +40,11 @@ import CalibrationPanel from './src/controls/calibration_panel';
 import ControlPanel from './src/controls/control_panel';
 import StatusBox from './src/status/status_box';
 import calculateCalibration from './src/utils/calculate_calibration';
+import {
+  leftAlignedRow,
+  textInputStyle,
+  textLabelStyle,
+} from './src/utils/common_styles';
 import playEndSound from './src/utils/play_end_sound';
 import playStartSound from './src/utils/play_start_sound';
 import sleep from './src/utils/sleep';
@@ -71,7 +77,7 @@ const App = () => {
     );
     speedEventEmitter.addListener('speed-available', (speed: number) => {
       console.log('Got speed:', speed);
-      broadcastSpeed(name, speed);
+      broadcastSpeed(name, Number(Number(speed).toFixed(2)));
     });
 
     console.log('We are now listening to image-available');
@@ -112,6 +118,8 @@ const App = () => {
     analyze(
       'file:///Users/aris/Library/Developer/CoreSimulator/Devices/D5565BBE-48DA-4821-9086-EE9D54432BA4/data/Media/DCIM/100APPLE/IMG_0007.MOV',
       1.0,
+      0,
+      -1,
     );
   };
 
@@ -133,7 +141,12 @@ const App = () => {
     stopVideoRecording();
   };
 
-  const analyze = (uri: string, duration: number) => {
+  const analyze = (
+    uri: string,
+    duration: number,
+    startIndex: number,
+    endIndex: number,
+  ) => {
     AsyncStorage.multiGet(
       [
         'leftCalibrationX',
@@ -192,6 +205,8 @@ const App = () => {
           boundsY1,
           boundsX2,
           boundsY2,
+          startIndex,
+          endIndex,
         );
       },
     );
@@ -224,7 +239,7 @@ const App = () => {
             uri: video.path,
             duration: video.duration,
           });
-          analyze(video.path, video.duration);
+          analyze(video.path, video.duration, 0, -1);
         },
         onRecordingError: (error) => {
           console.error('Error recording:', error);
@@ -235,7 +250,7 @@ const App = () => {
       setTimeout(() => {
         console.log('Got timeout to stop video recording');
         stopVideoRecording();
-      }, 2000);
+      }, 3000);
     });
 
     await promise;
@@ -254,7 +269,16 @@ const App = () => {
   };
 
   const rerunAnalysis = () => {
-    analyze(lastVideoDetails.uri, lastVideoDetails.duration);
+    analyze(lastVideoDetails.uri, lastVideoDetails.duration, 0, -1);
+  };
+
+  const rerunAnalysisSlow = () => {
+    analyze(
+      lastVideoDetails.uri,
+      lastVideoDetails.duration,
+      startIndex,
+      endIndex,
+    );
   };
 
   const playSound = async () => {
@@ -285,6 +309,17 @@ const App = () => {
   // }
 
   const showCamera = cameraConfiguration != undefined && permissionGranted;
+
+  const [startIndex, setStartIndex] = useState(0);
+  const [endIndex, setEndIndex] = useState(100);
+
+  const changeStartIndex = (value: string) => {
+    setStartIndex(Number(value));
+  };
+
+  const changeEndIndex = (value: string) => {
+    setEndIndex(Number(value));
+  };
 
   return (
     <>
@@ -343,6 +378,24 @@ const App = () => {
                 title="Rerun Last Analysis"
                 color="#841584"
               />
+
+              <View style={leftAlignedRow}>
+                <Text style={textLabelStyle}>Start Index:</Text>
+                <TextInput
+                  style={textInputStyle}
+                  keyboardType={'numeric'}
+                  onChangeText={changeStartIndex}></TextInput>
+                <Text style={textLabelStyle}>End Index:</Text>
+                <TextInput
+                  style={textInputStyle}
+                  keyboardType={'numeric'}
+                  onChangeText={changeEndIndex}></TextInput>
+                <Button
+                  onPress={rerunAnalysisSlow}
+                  title="Rerun Last Analysis - Slow"
+                  color="#841584"
+                />
+              </View>
 
               <Button
                 onPress={callSwiftWithSimulatorVideo}

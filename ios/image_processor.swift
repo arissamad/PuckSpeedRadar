@@ -19,6 +19,16 @@ class ImageProcessor: NSObject {
   var previousTime: CMTime?;
   var speeds: [Double] = [];
   
+  var fps: Int = 0;
+  var duration: Double = 0;
+  var pixelsPerMeter: Int = 0;
+  var x1: Int = 0;
+  var y1: Int = 0;
+  var x2: Int = 0;
+  var y2: Int = 0;
+  
+  var currIndex: Int = 0;
+  
   @objc func process(
     _ uri: String,
     fps fpsNS: NSNumber,
@@ -27,105 +37,190 @@ class ImageProcessor: NSObject {
     x1 x1NS: NSNumber,
     y1 y1NS: NSNumber,
     x2 x2NS: NSNumber,
-    y2 y2NS: NSNumber)
+    y2 y2NS: NSNumber,
+    startIndex startIndexNS: NSNumber,
+    endIndex endIndexNS: NSNumber)
   {
-    let fps = fpsNS as! Int;
-    let duration = durationNS as! Double;
-    let pixelsPerMeter = pixelsPerMeterNS as! Int;
-    let x1 = x1NS as! Int;
-    let y1 = y1NS as! Int;
-    let x2 = x2NS as! Int;
-    let y2 = y2NS as! Int;
+    fps = fpsNS as! Int;
+    duration = durationNS as! Double;
+    pixelsPerMeter = pixelsPerMeterNS as! Int;
+    x1 = x1NS as! Int;
+    y1 = y1NS as! Int;
+    x2 = x2NS as! Int;
+    y2 = y2NS as! Int;
+    let startIndex = startIndexNS as! Int;
+    let requestedEndIndex = endIndexNS as! Int;
     
     print("Starting image processing with " + uri, x1, y1, x2, y2);
     print("FPS:", fps);
     print("Duration:", duration);
     print("Pixels per meter:", pixelsPerMeter);
     
-    let lastFrame = (duration * Double(fps)) - 3; // No need to consider the last few frames
+    let lastFrame = Int((duration * Double(fps)) - 3); // No need to consider the last few frames
     
-    print("Last frame:", lastFrame);
+    var analyzeSpecificFrames = false;
     
+    var endIndex: Int;
+    if(requestedEndIndex < 0) {
+      endIndex = lastFrame;
+    } else {
+      endIndex = requestedEndIndex;
+      analyzeSpecificFrames = true;
+    }
+    
+    previousImage = nil;
+    previousTime = nil;
+    let timeStart = CFAbsoluteTimeGetCurrent();
+    
+    let assetImageGenerator = self.prepareAssetImageGenerator(url: URL(string: uri)!)
+    let broadSearchStepSize = 10;
+    
+    if(!analyzeSpecificFrames) {
+      // Do a broad search first.
+      print("---- INITIATING BROAD SEARCH ----")
+      var alreadyFoundFrame = false;
+      let broadSearchFrameTimes = calculateFrameTimes(startIndex: 0, endIndex: endIndex, step: broadSearchStepSize)
+      currIndex = 0;
+      
+      assetImageGenerator.generateCGImagesAsynchronously(forTimes: broadSearchFrameTimes) { (requestedTime: CMTime, image: CGImage?, actualTime: CMTime, result: AVAssetImageGenerator.Result, error: Error?) in
+        if(alreadyFoundFrame) {
+          print("CONTINUING TO PROCESS FRAMES, but already canceled!");
+          return;
+        }
+        
+        let foundAtLeastOneBlob = self.processImage(cgImage: image!, time: actualTime);
+        if(!foundAtLeastOneBlob) {
+          return;
+        }
+        
+        alreadyFoundFrame = true;
+        assetImageGenerator.cancelAllCGImageGeneration();
+        
+        self.previousImage = nil;
+        self.previousTime = nil;
+        let narrowedStartIndex = Int(requestedTime.value) - broadSearchStepSize + 1;
+        var narrowedEndIndex = Int(requestedTime.value) + 30; // We don't expect more than 30 frames for the puck to travel
+        if(narrowedEndIndex > lastFrame) {
+          narrowedEndIndex = lastFrame;
+        }
+        
+        print("---- INITIATING NARROWED SEARCH window=[\(narrowedStartIndex), \(narrowedEndIndex)] ----")
+      
+        self.speeds = [];
+        self.previousImage = nil;
+        self.previousTime = nil;
+        
+        let narrowFrameTimes = self.calculateFrameTimes(startIndex: narrowedStartIndex, endIndex: narrowedEndIndex, step: 1);
+        self.currIndex = narrowedStartIndex;
+        
+        var numFramesFoundBlobs = 0;
+        
+        var alreadyCompletedAnalysis = false;
+        assetImageGenerator.generateCGImagesAsynchronously(forTimes: narrowFrameTimes) { (requestedTime: CMTime, image: CGImage?, actualTime: CMTime, result: AVAssetImageGenerator.Result, error: Error?) in
+          if(alreadyCompletedAnalysis) {
+            print("CONTINUING TO PROCESS FRAMES, but already completed analysis!");
+            return;
+          }
+          
+          let foundAtLeastOneBlob = self.processImage(cgImage: image!, time: actualTime);
+          if(foundAtLeastOneBlob) {
+            numFramesFoundBlobs += 1;
+          }
+          
+          var terminateAnalysis = false;
+          
+          if(self.currIndex == Int(narrowedEndIndex)) {
+            terminateAnalysis = true;
+            print("Terminating analysis as we are at the end of the narrowed window");
+          }
+          
+          if(!foundAtLeastOneBlob && numFramesFoundBlobs > 4) {
+            terminateAnalysis = true;
+            print("Terminating analysis as no further motion detected");
+          }
+           
+          if(terminateAnalysis) {
+            alreadyCompletedAnalysis = true;
+            assetImageGenerator.cancelAllCGImageGeneration();
+            
+            let timeEnd = CFAbsoluteTimeGetCurrent();
+            print("  current total runtime=\(self.format(timeEnd - timeStart))")
+            self.calculateAndTransmitSpeed(speeds: self.speeds)
+          }
+        }
+      }
+    } else {
+      print("---- INITIATING SPECIFIC FRAMES ANALYSIS ----")
+      speeds = [];
+      currIndex = startIndex;
+      let specificFrameTimes = calculateFrameTimes(startIndex: startIndex, endIndex: lastFrame, step: 1)
+      assetImageGenerator.generateCGImagesAsynchronously(forTimes: specificFrameTimes) { (requestedTime: CMTime, image: CGImage?, actualTime: CMTime, result: AVAssetImageGenerator.Result, error: Error?) in
+        _ = self.processImage(cgImage: image!, time: actualTime);
+        
+        sleep(1);
+        
+        if(self.currIndex == Int(lastFrame)) {
+          let timeEnd = CFAbsoluteTimeGetCurrent();
+          print("  current total runtime=\(self.format(timeEnd - timeStart))")
+          self.calculateAndTransmitSpeed(speeds: self.speeds)
+        }
+      }
+    }
+    
+    print("Async job now running in separate thread. Main call done.");
+  }
+  
+  func calculateFrameTimes(startIndex: Int, endIndex: Int, step: Int) -> [NSValue] {
     var timesAsNSValue = [NSNumber]();
-    for i in stride(from: 0, to: lastFrame, by: 1) {
+    
+    for i in stride(from: startIndex, to: endIndex, by: step) {
       let cmTime = CMTime(value: Int64(i), timescale: CMTimeScale(fps));
       let nsNumber = NSNumber(time: cmTime);
       timesAsNSValue.append(nsNumber);
     }
     
-    previousImage = nil;
-    previousTime = nil;
-    speeds = [];
-    
-    let assetImageGenerator = self.prepareAssetImageGenerator(url: URL(string: uri)!)
-    var i = 0;
-    let timeStart = CFAbsoluteTimeGetCurrent();
-    assetImageGenerator.generateCGImagesAsynchronously(forTimes: timesAsNSValue) { (requestedTime: CMTime, image: CGImage?, actualTime: CMTime, result: AVAssetImageGenerator.Result, error: Error?) in
-      
-      print("## image i=\(i) requestedTime = \(self.format(requestedTime.seconds)) actualTime \(self.format(actualTime.seconds))");
-      
-      self.processImage(cgImage: image!, i: i, pixelsPerMeter: pixelsPerMeter, time: actualTime, x1, y1, x2, y2);
-      i += 1;
-      let timeEnd = CFAbsoluteTimeGetCurrent();
-      print("  current total runtime=\(self.format(timeEnd - timeStart))")
-      
-      if(i == Int(lastFrame) - 1) {
-        var avgSpeed: Double = 0;
-        
-        if(self.speeds.count > 0) {
-          var total: Double = 0;
-          for speed in self.speeds {
-            total += speed;
-          }
-          avgSpeed = total / Double(self.speeds.count);
-        }
-        
-        print(" ");
-        print("== DONE ==");
-        print("Num speed readings:", self.speeds.count);
-        print("Average speed: \(self.format(avgSpeed))");
-        print(" ");
-        
-        
-        DispatchQueue.main.sync {
-          let speedEventEmitter = self.bridge.module(for: SpeedEventEmitter.self) as? SpeedEventEmitter
-          speedEventEmitter!.sendEvent(withName: "speed-available", body: self.format(avgSpeed));
-        }
-      }
-    }
-    
-//    DispatchQueue.global(qos: .utility).async {
-//      let timeStart = CFAbsoluteTimeGetCurrent();
-//
-//      for i in stride(from: 55, to: 63, by: 1) {
-//        print("-------------");
-//        print("NEW LOOP i=\(i)");
-//
-//        let cgImage = self.imageFromVideo(assetIG: assetImageGenerator, at: Int64(i));
-//        self.processImage(cgImage: cgImage!, i: i);
-//      } // for
-//      let timeEnd = CFAbsoluteTimeGetCurrent();
-//      print("we are done processing all frames. total runtime=\(timeEnd - timeStart)");
-//    }
-    print("Async job now running in separate thread. Main call done.");
+    return timesAsNSValue;
   }
   
-  func processImage(cgImage: CGImage, i: Int, pixelsPerMeter: Int, time: CMTime, _ x1: Int, _ y1: Int, _ x2: Int, _ y2: Int) {
+  func calculateAndTransmitSpeed(speeds: [Double]) {
+    var avgSpeed: Double = 0;
+    
+    if(self.speeds.count > 0) {
+      var total: Double = 0;
+      for speed in self.speeds {
+        total += speed;
+      }
+      avgSpeed = total / Double(self.speeds.count);
+    }
+    
+    print(" ");
+    print("== DONE ==");
+    print("Num speed readings:", self.speeds.count);
+    print("Average speed: \(self.format(avgSpeed))");
+    print(" ");
+    
+    if(avgSpeed < 0.1) {
+      return;
+    }
+    
+    DispatchQueue.main.sync {
+      let speedEventEmitter = self.bridge.module(for: SpeedEventEmitter.self) as? SpeedEventEmitter
+      speedEventEmitter!.sendEvent(withName: "speed-available", body: self.format(avgSpeed));
+    }
+  }
+  
+  func processImage(cgImage: CGImage, time: CMTime) -> Bool {
+    let calculatedIndex = time.value;
+    print("## image currIndex=\(currIndex) calculatedIndex=\(calculatedIndex) time=\(format(time.seconds))");
+    
+    var foundAtLeastOneBlob = false;
+    
     let croppedWidth = x2 - x1;
     let croppedHeight = y2 - y1;
-    
-    let t1 = CFAbsoluteTimeGetCurrent();
-    
     let croppedCgImage = cgImage.cropping(to: CGRect(x: x1, y: y1, width: croppedWidth, height: croppedHeight));
     
-    let t2 = CFAbsoluteTimeGetCurrent();
-    
     var swiftImage = Image<RGBA<UInt8>>(cgImage: croppedCgImage!);
-    
-    let t3 = CFAbsoluteTimeGetCurrent();
-    
     let grayImage = swiftImage.map({ $0.gray })
-    let t4 = CFAbsoluteTimeGetCurrent();
     
     var newImageUrl: URL?;
     let blobLabeler: BlobLabeler = BlobLabeler();
@@ -147,7 +242,7 @@ class ImageProcessor: NSObject {
           }
         }
       }
-      newImageUrl = self.saveImage(diffImage.uiImage, name: "my_image_\(i)");
+      newImageUrl = self.saveImage(diffImage.uiImage, name: "my_image_\(currIndex)");
       
       blobLabeler.processImage(incomingBinaryData: diffImage, incomingWidth: diffImage.width, incomingHeight: diffImage.height)
       blobLabeler.filterBlobs();
@@ -163,7 +258,7 @@ class ImageProcessor: NSObject {
           let x = xPoints[i];
           let y = yPoints[i];
           
-          var limitedPoint = self.limitCoordinate(BPoint(x, y), croppedWidth, croppedHeight);
+          let limitedPoint = self.limitCoordinate(BPoint(x, y), croppedWidth, croppedHeight);
           
           swiftImage[limitedPoint.getX(), limitedPoint.getY()] = RGBA<UInt8>(red: 255, green: 0, blue: 0);
         }
@@ -201,15 +296,17 @@ class ImageProcessor: NSObject {
         
         speeds.append(speedInMetersPerSecond);
       }
+      
+      if(blobs.count > 0) {
+        foundAtLeastOneBlob = true;
+      }
 
-      newImageUrl = self.saveImage(swiftImage.uiImage, name: "my_blob_\(i)");
+      newImageUrl = self.saveImage(swiftImage.uiImage, name: "my_blob_\(currIndex)");
       
     } else {
       print("    - previousImage is nil");
-      newImageUrl = self.saveImage(grayImage.uiImage, name: "my_image_\(i)");
+      newImageUrl = self.saveImage(grayImage.uiImage, name: "my_image_\(currIndex)");
     }
-    let t5 = CFAbsoluteTimeGetCurrent();
-      
     previousImage = grayImage;
     previousTime = time;
     
@@ -219,18 +316,9 @@ class ImageProcessor: NSObject {
       let myEventEmitter = self.bridge.module(for: MyEventEmitter.self) as? MyEventEmitter
       myEventEmitter!.sendEvent(withName: "image-available", body: urlAsString);
     }
-    let t6 = CFAbsoluteTimeGetCurrent();
+    currIndex += 1;
     
-    let d1 = t2-t1;
-    let d2 = t3-t2;
-    let d3 = t4-t3;
-    let d4 = t5-t4;
-    let d5 = t6-t5;
-    let totalTime = t6 - t1;
-    
-    //print("d1=\(d1) d2=\(d2) d3=\(d3) d4=\(d4) d5=\(d5) total=\(totalTime)")
-    
-    //Thread.sleep(foimeInterval: 0.25)
+    return foundAtLeastOneBlob;
   }
   
   func limitCoordinate(_ point: BPoint, _ width: Int, _ height: Int) -> BPoint {

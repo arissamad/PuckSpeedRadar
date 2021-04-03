@@ -12,6 +12,8 @@ RCT_EXTERN_METHOD(
                   y1: (nonnull NSNumber) y1
                   x2: (nonnull NSNumber) x2
                   y2: (nonnull NSNumber) y2
+                  startIndex: (nonnull NSNumber) startIndex
+                  endIndex: (nonnull NSNumber) endIndex
 )
 
 @end

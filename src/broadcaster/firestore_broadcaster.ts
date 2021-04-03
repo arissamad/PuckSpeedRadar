@@ -22,12 +22,6 @@ export default async function broadcastSpeed(
 
   latestSpeedDoc.set({
     name: name,
-    speed: currentSpeed + 1,
-    time: new Date(),
-  });
-
-  const readingsByName = firestore().collection(`speed-readings/${name}`);
-  readingsByName.add({
     speed: speed,
     time: new Date(),
   });

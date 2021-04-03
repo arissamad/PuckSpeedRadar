@@ -6,12 +6,15 @@ import {
   ImageStyle,
   Text,
   TextInput,
-  TextStyle,
   View,
   ViewStyle,
 } from 'react-native';
 import {imageHeight, imageWidth} from '../camera/my_camera';
-import {leftAlignedRow} from '../utils/common_styles';
+import {
+  leftAlignedRow,
+  textInputStyle,
+  textLabelStyle,
+} from '../utils/common_styles';
 import Bounds from './bounds';
 
 type Props = {
@@ -359,17 +362,4 @@ const roundButton: ViewStyle = {
 
 const selectedButton: ViewStyle = {
   backgroundColor: '#55C3F0',
-};
-
-const textLabelStyle: TextStyle = {
-  fontSize: 20,
-};
-
-const textInputStyle: TextStyle = {
-  borderColor: 'grey',
-  borderWidth: 1,
-  padding: 5,
-  fontSize: 20,
-  marginLeft: 10,
-  flexGrow: 1,
 };
