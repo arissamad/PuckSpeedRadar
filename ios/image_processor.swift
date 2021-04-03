@@ -15,7 +15,10 @@ import SwiftImage
 class ImageProcessor: NSObject {
   @objc var bridge: RCTBridge!
   
+  var firstImage: Image<UInt8>?;
   var previousImage: Image<UInt8>?;
+  
+  var previousBlob: Blob?;
   var previousTime: CMTime?;
   var speeds: [Double] = [];
   
@@ -39,7 +42,8 @@ class ImageProcessor: NSObject {
     x2 x2NS: NSNumber,
     y2 y2NS: NSNumber,
     startIndex startIndexNS: NSNumber,
-    endIndex endIndexNS: NSNumber)
+    endIndex endIndexNS: NSNumber,
+    callback successCallback: @escaping RCTResponseSenderBlock)
   {
     fps = fpsNS as! Int;
     duration = durationNS as! Double;
@@ -68,6 +72,8 @@ class ImageProcessor: NSObject {
       analyzeSpecificFrames = true;
     }
     
+    firstImage = nil;
+    previousBlob = nil;
     previousImage = nil;
     previousTime = nil;
     let timeStart = CFAbsoluteTimeGetCurrent();
@@ -77,12 +83,15 @@ class ImageProcessor: NSObject {
     
     if(!analyzeSpecificFrames) {
       // Do a broad search first.
-      print("---- INITIATING BROAD SEARCH ----")
+      print("---- INITIATING BROAD SEARCH ---- endIndex: \(endIndex)")
       var alreadyFoundFrame = false;
       let broadSearchFrameTimes = calculateFrameTimes(startIndex: 0, endIndex: endIndex, step: broadSearchStepSize)
       currIndex = 0;
       
       assetImageGenerator.generateCGImagesAsynchronously(forTimes: broadSearchFrameTimes) { (requestedTime: CMTime, image: CGImage?, actualTime: CMTime, result: AVAssetImageGenerator.Result, error: Error?) in
+        let convertedTime = requestedTime.convertScale(Int32(self.fps), method: CMTimeRoundingMethod.roundHalfAwayFromZero);
+        let calculatedIndex = convertedTime.value;
+        
         if(alreadyFoundFrame) {
           print("CONTINUING TO PROCESS FRAMES, but already canceled!");
           return;
@@ -90,14 +99,15 @@ class ImageProcessor: NSObject {
         
         let foundAtLeastOneBlob = self.processImage(cgImage: image!, time: actualTime);
         if(!foundAtLeastOneBlob) {
+          if(calculatedIndex > endIndex - broadSearchStepSize) {
+            successCallback([]);
+          }
           return;
         }
         
         alreadyFoundFrame = true;
         assetImageGenerator.cancelAllCGImageGeneration();
         
-        self.previousImage = nil;
-        self.previousTime = nil;
         let narrowedStartIndex = Int(requestedTime.value) - broadSearchStepSize + 1;
         var narrowedEndIndex = Int(requestedTime.value) + 30; // We don't expect more than 30 frames for the puck to travel
         if(narrowedEndIndex > lastFrame) {
@@ -107,6 +117,7 @@ class ImageProcessor: NSObject {
         print("---- INITIATING NARROWED SEARCH window=[\(narrowedStartIndex), \(narrowedEndIndex)] ----")
       
         self.speeds = [];
+        self.previousBlob = nil;
         self.previousImage = nil;
         self.previousTime = nil;
         
@@ -146,6 +157,8 @@ class ImageProcessor: NSObject {
             let timeEnd = CFAbsoluteTimeGetCurrent();
             print("  current total runtime=\(self.format(timeEnd - timeStart))")
             self.calculateAndTransmitSpeed(speeds: self.speeds)
+            
+            successCallback([]);
           }
         }
       }
@@ -163,6 +176,8 @@ class ImageProcessor: NSObject {
           let timeEnd = CFAbsoluteTimeGetCurrent();
           print("  current total runtime=\(self.format(timeEnd - timeStart))")
           self.calculateAndTransmitSpeed(speeds: self.speeds)
+          
+          successCallback([]);
         }
       }
     }
@@ -210,7 +225,8 @@ class ImageProcessor: NSObject {
   }
   
   func processImage(cgImage: CGImage, time: CMTime) -> Bool {
-    let calculatedIndex = time.value;
+    let convertedTime = time.convertScale(Int32(fps), method: CMTimeRoundingMethod.roundHalfAwayFromZero);
+    let calculatedIndex = convertedTime.value;
     print("## image currIndex=\(currIndex) calculatedIndex=\(calculatedIndex) time=\(format(time.seconds))");
     
     var foundAtLeastOneBlob = false;
@@ -224,12 +240,13 @@ class ImageProcessor: NSObject {
     
     var newImageUrl: URL?;
     let blobLabeler: BlobLabeler = BlobLabeler();
-    if(previousImage != nil) {
+    //if(previousImage != nil) {
+    if(firstImage != nil) {
       var diffImage = Image<Bool>(width: croppedWidth, height: croppedHeight, pixel: false);
       for x in stride(from: 0, to: croppedWidth, by: 1) {
         for y in stride(from: 0, to: croppedHeight, by: 1) {
           let g: UInt8 = grayImage[x, y];
-          let p: UInt8 = previousImage![x, y];
+          let p: UInt8 = firstImage![x, y];
           var diff: UInt8;
           if(g > p) {
             diff = g-p;
@@ -264,48 +281,44 @@ class ImageProcessor: NSObject {
         }
         
         let cog = blob.getCenterOfGravity();
-        for x in 0..<50 {
-          let pointToDraw = BPoint(cog.getX() + x - 25, cog.getY());
-          let limitedPoint = self.limitCoordinate(pointToDraw, croppedWidth, croppedHeight);
+        drawCrossHairs(swiftImage: &swiftImage, cog: cog, width: croppedWidth, height: croppedHeight);
+      }
+      
+      if(previousBlob != nil) {
+        drawCrossHairs(swiftImage: &swiftImage, cog: previousBlob!.getCenterOfGravity(), width: croppedWidth, height: croppedHeight);
+      }
+      
+      // Old way, using previousImage/currImage compare
+//      if(blobs.count == 2) {
+//        let speed = getSpeedFromTwoBlobs(blob1: blobs[0], blob2: blobs[1], time: time);
+//        speeds.append(speed);
+//      }
+      
+      // New way, using previousBlob/currBlob compare
+      if(blobs.count == 1) {
+        if(previousBlob == nil) {
+          previousBlob = blobs[0];
+        } else {
+          let speed = getSpeedFromTwoBlobs(blob1: previousBlob!, blob2: blobs[0], time: time);
+          speeds.append(speed);
           
-          swiftImage[limitedPoint.getX(), limitedPoint.getY()] = RGBA<UInt8>(red: 0, green: 0, blue: 255);
-        }
-        for y in 0..<50 {
-          let pointToDraw = BPoint(cog.getX(), cog.getY() + y - 25);
-          let limitedPoint = self.limitCoordinate(pointToDraw, croppedWidth, croppedHeight);
-          
-          swiftImage[limitedPoint.getX(), limitedPoint.getY()] = RGBA<UInt8>(red: 0, green: 0, blue: 255);
+          previousBlob = blobs[0];
         }
       }
       
-      if(blobs.count == 2) {
-        let cg1 = blobs[0].getCenterOfGravity();
-        let cg2 = blobs[1].getCenterOfGravity();
-        
-        let xDistance = cg2.getX() - cg1.getX();
-        let yDistance = cg2.getY() - cg1.getY();
-        
-        let distanceInPixels = Int(sqrt(Double(xDistance * xDistance + yDistance * yDistance)));
-        let distanceInMeters = Double(distanceInPixels) / Double(pixelsPerMeter);
-        
-        let timeDiff = time - previousTime!;
-        let speedInMetersPerSecond = distanceInMeters / timeDiff.seconds;
-        print("  distanceInPixeles: \(distanceInPixels) distanceInMeters: \(self.format(distanceInMeters)) timeDiff: \(format(timeDiff.seconds))");
-        
-        print(String(format: "  --> Speed: %.5f", speedInMetersPerSecond));
-        
-        speeds.append(speedInMetersPerSecond);
+      if(blobs.count != 1) {
+        previousBlob = nil;
       }
       
-      if(blobs.count > 0) {
-        foundAtLeastOneBlob = true;
-      }
-
+      foundAtLeastOneBlob = blobs.count > 0;
+      
       newImageUrl = self.saveImage(swiftImage.uiImage, name: "my_blob_\(currIndex)");
-      
     } else {
       print("    - previousImage is nil");
       newImageUrl = self.saveImage(grayImage.uiImage, name: "my_image_\(currIndex)");
+    }
+    if(firstImage == nil) {
+      firstImage = grayImage;
     }
     previousImage = grayImage;
     previousTime = time;
@@ -319,6 +332,39 @@ class ImageProcessor: NSObject {
     currIndex += 1;
     
     return foundAtLeastOneBlob;
+  }
+  
+  func drawCrossHairs(swiftImage: inout Image<RGBA<UInt8>>, cog: BPoint, width: Int, height: Int) {
+    for x in 0..<50 {
+      let pointToDraw = BPoint(cog.getX() + x - 25, cog.getY());
+      let limitedPoint = self.limitCoordinate(pointToDraw, width, height);
+      
+      swiftImage[limitedPoint.getX(), limitedPoint.getY()] = RGBA<UInt8>(red: 0, green: 0, blue: 255);
+    }
+    for y in 0..<50 {
+      let pointToDraw = BPoint(cog.getX(), cog.getY() + y - 25);
+      let limitedPoint = self.limitCoordinate(pointToDraw, width, height);
+      
+      swiftImage[limitedPoint.getX(), limitedPoint.getY()] = RGBA<UInt8>(red: 0, green: 0, blue: 255);
+    }
+  }
+  
+  func getSpeedFromTwoBlobs(blob1: Blob, blob2: Blob, time: CMTime) -> Double {
+    let cg1 = blob1.getCenterOfGravity();
+    let cg2 = blob2.getCenterOfGravity();
+    
+    let xDistance = cg2.getX() - cg1.getX();
+    let yDistance = cg2.getY() - cg1.getY();
+    
+    let distanceInPixels = Int(sqrt(Double(xDistance * xDistance + yDistance * yDistance)));
+    let distanceInMeters = Double(distanceInPixels) / Double(pixelsPerMeter);
+    
+    let timeDiff = time - previousTime!;
+    let speedInMetersPerSecond = distanceInMeters / timeDiff.seconds;
+    print("  distanceInPixeles: \(distanceInPixels) distanceInMeters: \(self.format(distanceInMeters)) timeDiff: \(format(timeDiff.seconds))");
+    
+    print(String(format: "  --> Speed: %.5f", speedInMetersPerSecond));
+    return speedInMetersPerSecond;
   }
   
   func limitCoordinate(_ point: BPoint, _ width: Int, _ height: Int) -> BPoint {

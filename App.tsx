@@ -120,6 +120,7 @@ const App = () => {
       1.0,
       0,
       -1,
+      () => {},
     );
   };
 
@@ -133,12 +134,13 @@ const App = () => {
 
   const [isRecording, setIsRecording] = useState(false);
   const clickedRecord = () => {
-    recordVideo();
+    startVideoRecording();
     setIsRecording(true);
   };
 
   const clickedStop = () => {
     stopVideoRecording();
+    setIsRecording(false);
   };
 
   const analyze = (
@@ -146,6 +148,7 @@ const App = () => {
     duration: number,
     startIndex: number,
     endIndex: number,
+    callback: () => void,
   ) => {
     AsyncStorage.multiGet(
       [
@@ -207,6 +210,9 @@ const App = () => {
           boundsY2,
           startIndex,
           endIndex,
+          () => {
+            callback();
+          },
         );
       },
     );
@@ -239,7 +245,10 @@ const App = () => {
             uri: video.path,
             duration: video.duration,
           });
-          analyze(video.path, video.duration, 0, -1);
+          analyze(video.path, video.duration, 0, -1, () => {
+            console.log('returned from analysis');
+            setIsRecording(false);
+          });
         },
         onRecordingError: (error) => {
           console.error('Error recording:', error);
@@ -259,17 +268,16 @@ const App = () => {
     await playEndSound();
   };
 
-  const recordVideo = () => {
+  const startVideoRecording = () => {
     executeSingleRecordingSequence();
   };
 
   const stopVideoRecording = () => {
     cameraRef.current?.stopRecording();
-    setIsRecording(false);
   };
 
   const rerunAnalysis = () => {
-    analyze(lastVideoDetails.uri, lastVideoDetails.duration, 0, -1);
+    analyze(lastVideoDetails.uri, lastVideoDetails.duration, 0, -1, () => {});
   };
 
   const rerunAnalysisSlow = () => {
@@ -278,6 +286,7 @@ const App = () => {
       lastVideoDetails.duration,
       startIndex,
       endIndex,
+      () => {},
     );
   };
 
