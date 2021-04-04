@@ -22,6 +22,8 @@ class ImageProcessor: NSObject {
   var previousTime: CMTime?;
   var speeds: [Double] = [];
   
+  var numFramesFoundSpeed = 0;
+  
   var fps: Int = 0;
   var duration: Double = 0;
   var pixelsPerMeter: Int = 0;
@@ -31,6 +33,8 @@ class ImageProcessor: NSObject {
   var y2: Int = 0;
   
   var currIndex: Int = 0;
+  
+  let speechSynthesizer = AVSpeechSynthesizer();
   
   @objc func process(
     _ uri: String,
@@ -97,10 +101,10 @@ class ImageProcessor: NSObject {
           return;
         }
         
-        let foundAtLeastOneBlob = self.processImage(cgImage: image!, time: actualTime);
-        if(!foundAtLeastOneBlob) {
+        let blobs = self.processImage(cgImage: image!, time: actualTime);
+        if(blobs.count == 0) {
           if(calculatedIndex > endIndex - broadSearchStepSize) {
-            successCallback([]);
+            successCallback([false]);
           }
           return;
         }
@@ -115,16 +119,16 @@ class ImageProcessor: NSObject {
         }
         
         print("---- INITIATING NARROWED SEARCH window=[\(narrowedStartIndex), \(narrowedEndIndex)] ----")
+        self.speechSynthesizer.speak(AVSpeechUtterance(string: "Found shot. Analyzing."));
       
         self.speeds = [];
         self.previousBlob = nil;
         self.previousImage = nil;
         self.previousTime = nil;
+        self.numFramesFoundSpeed = 0;
         
         let narrowFrameTimes = self.calculateFrameTimes(startIndex: narrowedStartIndex, endIndex: narrowedEndIndex, step: 1);
         self.currIndex = narrowedStartIndex;
-        
-        var numFramesFoundBlobs = 0;
         
         var alreadyCompletedAnalysis = false;
         assetImageGenerator.generateCGImagesAsynchronously(forTimes: narrowFrameTimes) { (requestedTime: CMTime, image: CGImage?, actualTime: CMTime, result: AVAssetImageGenerator.Result, error: Error?) in
@@ -133,23 +137,14 @@ class ImageProcessor: NSObject {
             return;
           }
           
-          let foundAtLeastOneBlob = self.processImage(cgImage: image!, time: actualTime);
-          if(foundAtLeastOneBlob) {
-            numFramesFoundBlobs += 1;
-          }
-          
-          var terminateAnalysis = false;
+          let blobs = self.processImage(cgImage: image!, time: actualTime);
+          var terminateAnalysis = self.processBlobs(blobs: blobs, time: actualTime);
           
           if(self.currIndex == Int(narrowedEndIndex)) {
             terminateAnalysis = true;
             print("Terminating analysis as we are at the end of the narrowed window");
           }
           
-          if(!foundAtLeastOneBlob && numFramesFoundBlobs > 4) {
-            terminateAnalysis = true;
-            print("Terminating analysis as no further motion detected");
-          }
-           
           if(terminateAnalysis) {
             alreadyCompletedAnalysis = true;
             assetImageGenerator.cancelAllCGImageGeneration();
@@ -158,7 +153,7 @@ class ImageProcessor: NSObject {
             print("  current total runtime=\(self.format(timeEnd - timeStart))")
             self.calculateAndTransmitSpeed(speeds: self.speeds)
             
-            successCallback([]);
+            successCallback([self.numFramesFoundSpeed > 4]);
           }
         }
       }
@@ -172,7 +167,7 @@ class ImageProcessor: NSObject {
         
         sleep(1);
         
-        if(self.currIndex == Int(lastFrame)) {
+        if(self.currIndex == Int(endIndex)) {
           let timeEnd = CFAbsoluteTimeGetCurrent();
           print("  current total runtime=\(self.format(timeEnd - timeStart))")
           self.calculateAndTransmitSpeed(speeds: self.speeds)
@@ -197,6 +192,71 @@ class ImageProcessor: NSObject {
     return timesAsNSValue;
   }
   
+  func processBlobs(blobs: [Blob], time: CMTime) -> Bool {
+    if(blobs.count > 2) { // So this could be the stick, the puck, and a bunch of blobs of the target when it is hit
+      print("Terminating analysis as more than 2 blobs found");
+      return true;
+    }
+    
+    let croppedWidth = x2 - x1;
+    var selectedBlob: Blob?;
+    
+    if(blobs.count == 1) {
+      selectedBlob = blobs[0];
+    } else if(blobs.count == 2) {
+      // This could be the stick and the puck
+      print(" -- found 2 blobs, maybe stick and puck");
+      if(previousBlob != nil) {
+        var leftBlob: Blob;
+        var rightBlob: Blob;
+        if(blobs[0].getCenterOfGravity().getX() < blobs[1].getCenterOfGravity().getX()) {
+          leftBlob = blobs[0];
+          rightBlob = blobs[1];
+        } else {
+          leftBlob = blobs[1];
+          rightBlob = blobs[0];
+        }
+        
+        if(Double(leftBlob.getCenterOfGravity().getX()) < 0.1 * Double(croppedWidth) && rightBlob.getCenterOfGravity().getX() > previousBlob!.getCenterOfGravity().getX()) {
+          // Good to go! WE are assuming the stick is the left blob.
+          print(" -- Using the right blob, assuming the left blob is the stick");
+          selectedBlob = rightBlob;
+        }
+      }
+    }
+    
+    
+    var foundSpeed = false;
+    if(selectedBlob != nil) {
+      if(previousBlob != nil) {
+        if(selectedBlob!.getCenterOfGravity().getX() < previousBlob!.getCenterOfGravity().getX()) {
+          print("Terminating analysis because puck is moving backwards.");
+          return true;
+        }
+        
+        let speed = getSpeedFromTwoBlobs(blob1: previousBlob!, blob2: selectedBlob!, time: time);
+        speeds.append(speed);
+        foundSpeed = true;
+      }
+      
+      previousBlob = selectedBlob;
+      previousTime = time;
+    } else {
+      previousBlob = nil;
+    }
+    
+    if(foundSpeed) {
+      numFramesFoundSpeed += 1;
+    }
+    
+    if(!foundSpeed && numFramesFoundSpeed > 4) {
+      print("Terminating analysis as speed in this frame could not be detected, but we already have enough data.");
+      return true;
+    }
+    
+    return false;
+  }
+  
   func calculateAndTransmitSpeed(speeds: [Double]) {
     var avgSpeed: Double = 0;
     
@@ -211,25 +271,35 @@ class ImageProcessor: NSObject {
     print(" ");
     print("== DONE ==");
     print("Num speed readings:", self.speeds.count);
+    print("Speed readings: \(self.speeds)");
     print("Average speed: \(self.format(avgSpeed))");
     print(" ");
     
-    if(avgSpeed < 0.1) {
+    if(avgSpeed < 1) {
+      self.speechSynthesizer.speak(AVSpeechUtterance(string: "No shot found."));
       return;
     }
     
+    let speedInMilesPerHour = avgSpeed * 2.23694;
+    let roundedSpeed = String(format: "%.f", speedInMilesPerHour)
+    print("Speed MPH = \(roundedSpeed)")
+    
+    self.speechSynthesizer.speak(AVSpeechUtterance(string: "Shot speed is \(roundedSpeed) miles per hour."));
+    let secondUtterance =  AVSpeechUtterance(string: "\(roundedSpeed)");
+    secondUtterance.rate = 0.25;
+    self.speechSynthesizer.speak(secondUtterance);
+    self.speechSynthesizer.speak(AVSpeechUtterance(string: "miles per hour."));
+    
     DispatchQueue.main.sync {
       let speedEventEmitter = self.bridge.module(for: SpeedEventEmitter.self) as? SpeedEventEmitter
-      speedEventEmitter!.sendEvent(withName: "speed-available", body: self.format(avgSpeed));
+      speedEventEmitter!.sendEvent(withName: "speed-available", body: self.format(speedInMilesPerHour));
     }
   }
   
-  func processImage(cgImage: CGImage, time: CMTime) -> Bool {
+  func processImage(cgImage: CGImage, time: CMTime) -> [Blob] {
     let convertedTime = time.convertScale(Int32(fps), method: CMTimeRoundingMethod.roundHalfAwayFromZero);
     let calculatedIndex = convertedTime.value;
     print("## image currIndex=\(currIndex) calculatedIndex=\(calculatedIndex) time=\(format(time.seconds))");
-    
-    var foundAtLeastOneBlob = false;
     
     let croppedWidth = x2 - x1;
     let croppedHeight = y2 - y1;
@@ -240,7 +310,8 @@ class ImageProcessor: NSObject {
     
     var newImageUrl: URL?;
     let blobLabeler: BlobLabeler = BlobLabeler();
-    //if(previousImage != nil) {
+    var blobs: [Blob] = [];
+    
     if(firstImage != nil) {
       var diffImage = Image<Bool>(width: croppedWidth, height: croppedHeight, pixel: false);
       for x in stride(from: 0, to: croppedWidth, by: 1) {
@@ -265,7 +336,7 @@ class ImageProcessor: NSObject {
       blobLabeler.filterBlobs();
       blobLabeler.printDebuggingInfo();
       
-      let blobs = blobLabeler.getBlobs();
+      blobs = blobLabeler.getBlobs();
       for blob in blobs {
         let outerContour = blob.getOuterContour();
         
@@ -288,40 +359,16 @@ class ImageProcessor: NSObject {
         drawCrossHairs(swiftImage: &swiftImage, cog: previousBlob!.getCenterOfGravity(), width: croppedWidth, height: croppedHeight);
       }
       
-      // Old way, using previousImage/currImage compare
-//      if(blobs.count == 2) {
-//        let speed = getSpeedFromTwoBlobs(blob1: blobs[0], blob2: blobs[1], time: time);
-//        speeds.append(speed);
-//      }
-      
-      // New way, using previousBlob/currBlob compare
-      if(blobs.count == 1) {
-        if(previousBlob == nil) {
-          previousBlob = blobs[0];
-        } else {
-          let speed = getSpeedFromTwoBlobs(blob1: previousBlob!, blob2: blobs[0], time: time);
-          speeds.append(speed);
-          
-          previousBlob = blobs[0];
-        }
-      }
-      
-      if(blobs.count != 1) {
-        previousBlob = nil;
-      }
-      
-      foundAtLeastOneBlob = blobs.count > 0;
-      
       newImageUrl = self.saveImage(swiftImage.uiImage, name: "my_blob_\(currIndex)");
     } else {
       print("    - previousImage is nil");
       newImageUrl = self.saveImage(grayImage.uiImage, name: "my_image_\(currIndex)");
     }
+    
     if(firstImage == nil) {
       firstImage = grayImage;
     }
     previousImage = grayImage;
-    previousTime = time;
     
     let urlAsString = "\(newImageUrl!)";
     
@@ -331,7 +378,7 @@ class ImageProcessor: NSObject {
     }
     currIndex += 1;
     
-    return foundAtLeastOneBlob;
+    return blobs;
   }
   
   func drawCrossHairs(swiftImage: inout Image<RGBA<UInt8>>, cog: BPoint, width: Int, height: Int) {
@@ -358,6 +405,8 @@ class ImageProcessor: NSObject {
     
     let distanceInPixels = Int(sqrt(Double(xDistance * xDistance + yDistance * yDistance)));
     let distanceInMeters = Double(distanceInPixels) / Double(pixelsPerMeter);
+    
+    print("time: \(time.seconds) previousTime: \(previousTime!.seconds)")
     
     let timeDiff = time - previousTime!;
     let speedInMetersPerSecond = distanceInMeters / timeDiff.seconds;

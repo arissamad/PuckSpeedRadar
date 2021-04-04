@@ -52,6 +52,7 @@ class Blob {
     return area;
   }
   
+  // A true circle is roughly 12.5, with the numbers getting bigger as they are less circular.
   func getCircularity() -> Double {
     if(circularity != -1){
       return circularity;

@@ -22,11 +22,11 @@ import {
   Text,
   TextInput,
   View,
+  ViewStyle,
 } from 'react-native';
 import RNBeep from 'react-native-a-beep';
 import {Camera, PhotoFile} from 'react-native-vision-camera';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-import broadcastSpeed from './src/broadcaster/firestore_broadcaster';
 import getCameraConfiguration, {
   CameraConfig,
 } from './src/camera/get_camera_configuration';
@@ -46,11 +46,11 @@ import {
   textLabelStyle,
 } from './src/utils/common_styles';
 import playEndSound from './src/utils/play_end_sound';
+import playErrorSound from './src/utils/play_error_sound';
 import playStartSound from './src/utils/play_start_sound';
 import sleep from './src/utils/sleep';
 
 const fps = 60;
-const calibrationStickLengthInM = 1;
 
 const App = () => {
   const [
@@ -77,7 +77,7 @@ const App = () => {
     );
     speedEventEmitter.addListener('speed-available', (speed: number) => {
       console.log('Got speed:', speed);
-      broadcastSpeed(name, Number(Number(speed).toFixed(2)));
+      //broadcastSpeed(name, Number(Number(speed).toFixed(2)));
     });
 
     console.log('We are now listening to image-available');
@@ -133,14 +133,17 @@ const App = () => {
   };
 
   const [isRecording, setIsRecording] = useState(false);
+  const isRecordingRef = useRef(false);
+
   const clickedRecord = () => {
-    startVideoRecording();
     setIsRecording(true);
+    isRecordingRef.current = true;
+    startVideoRecording();
   };
 
   const clickedStop = () => {
-    stopVideoRecording();
     setIsRecording(false);
+    isRecordingRef.current = false;
   };
 
   const analyze = (
@@ -148,7 +151,7 @@ const App = () => {
     duration: number,
     startIndex: number,
     endIndex: number,
-    callback: () => void,
+    callback: (speedFound: boolean) => void,
   ) => {
     AsyncStorage.multiGet(
       [
@@ -161,6 +164,7 @@ const App = () => {
         'boundsX2',
         'boundsY2',
         'name',
+        'calibrationDistance',
       ],
       (errors, results) => {
         console.log('Any errors during AsyncStorage.multiGet: ', errors);
@@ -181,6 +185,8 @@ const App = () => {
         const name = results[8][1];
         setName(name ?? 'Aris');
 
+        const calibrationDistance = results[9][1];
+
         console.log(
           'calibration points',
           leftCalibrationX,
@@ -195,7 +201,7 @@ const App = () => {
           leftCalibrationY,
           rightCalibrationX,
           rightCalibrationY,
-          calibrationStickLengthInM,
+          Number(calibrationDistance),
           imageResizeFactor,
         );
 
@@ -210,8 +216,8 @@ const App = () => {
           boundsY2,
           startIndex,
           endIndex,
-          () => {
-            callback();
+          (speedFound: boolean) => {
+            callback(speedFound);
           },
         );
       },
@@ -238,20 +244,45 @@ const App = () => {
     const promise = new Promise<void>((resolve, reject) => {
       cameraRef.current?.startRecording({
         onRecordingFinished: (video) => {
+          playEndSound();
           console.log('Got video:', video);
-          resolve();
-          var path = video.path;
-          setLastVideoDetails({
-            uri: video.path,
-            duration: video.duration,
-          });
-          analyze(video.path, video.duration, 0, -1, () => {
-            console.log('returned from analysis');
-            setIsRecording(false);
+
+          analyze(video.path, video.duration, 0, -1, (speedFound: boolean) => {
+            console.log('returned from analysis speedFound=', speedFound);
+
+            if (speedFound) {
+              const videoDetails: VideoDetails = {
+                uri: video.path,
+                duration: video.duration,
+              };
+              setLastVideoDetails(videoDetails);
+              AsyncStorage.getItem('recentVideoDetails').then(
+                (value: string | null) => {
+                  var recentVideoDetails: VideoDetails[];
+                  if (value) {
+                    recentVideoDetails = JSON.parse(value);
+                  } else {
+                    recentVideoDetails = [];
+                  }
+
+                  recentVideoDetails.unshift(videoDetails);
+                  if (recentVideoDetails.length > 3) {
+                    recentVideoDetails.splice(3, 5);
+                  }
+
+                  AsyncStorage.setItem(
+                    'recentVideoDetails',
+                    JSON.stringify(recentVideoDetails),
+                  );
+                },
+              );
+            }
+            resolve();
           });
         },
         onRecordingError: (error) => {
           console.error('Error recording:', error);
+          playErrorSound();
           reject();
         },
       });
@@ -262,14 +293,14 @@ const App = () => {
       }, 3000);
     });
 
-    await promise;
-
-    console.log('Now playing end sound');
-    await playEndSound();
+    return promise;
   };
 
-  const startVideoRecording = () => {
-    executeSingleRecordingSequence();
+  const startVideoRecording = async () => {
+    while (isRecordingRef.current) {
+      await executeSingleRecordingSequence();
+      await sleep(5000);
+    }
   };
 
   const stopVideoRecording = () => {
@@ -291,9 +322,10 @@ const App = () => {
   };
 
   const playSound = async () => {
-    await playStartSound();
-    await sleep(5000);
-    await playEndSound();
+    playErrorSound();
+    // await playStartSound();
+    // await sleep(5000);
+    // await playEndSound();
     // for (var i = 1109; i < 1119; i++) {
     //   console.log('Playing', i);
     //   RNBeep.PlaySysSound(i);
@@ -328,6 +360,26 @@ const App = () => {
 
   const changeEndIndex = (value: string) => {
     setEndIndex(Number(value));
+  };
+
+  const onPressTurnOnBulb = () => {
+    NativeModules.Bulb.turnOn();
+  };
+
+  const [recentIndex, setRecentIndex] = useState('');
+
+  const rerunRecentAnalysis = () => {
+    AsyncStorage.getItem('recentVideoDetails').then((value: string | null) => {
+      if (value) {
+        const recentVideoDetails: VideoDetails[] = JSON.parse(value);
+        if (recentVideoDetails.length > Number(recentIndex)) {
+          const videoDetails = recentVideoDetails[Number(recentIndex)];
+          console.log('got video details', videoDetails);
+
+          analyze(videoDetails.uri, videoDetails.duration, 0, -1, () => {});
+        }
+      }
+    });
   };
 
   return (
@@ -388,7 +440,22 @@ const App = () => {
                 color="#841584"
               />
 
-              <View style={leftAlignedRow}>
+              <View style={[leftAlignedRow, marginStyle]}>
+                <Text style={textLabelStyle}>
+                  Recent Index (0 most recent):
+                </Text>
+                <TextInput
+                  style={textInputStyle}
+                  keyboardType={'numeric'}
+                  onChangeText={setRecentIndex}></TextInput>
+                <Button
+                  onPress={rerunRecentAnalysis}
+                  title="Rerun Analysis"
+                  color="#841584"
+                />
+              </View>
+
+              <View style={[leftAlignedRow, marginStyle]}>
                 <Text style={textLabelStyle}>Start Index:</Text>
                 <TextInput
                   style={textInputStyle}
@@ -415,6 +482,12 @@ const App = () => {
               <Button onPress={playSound} title="Play Sound" color="#841584" />
 
               <Button
+                onPress={stopVideoRecording}
+                title="Try Stop Video Recording Again"
+                color="#841584"
+              />
+
+              <Button
                 onPress={takePicture}
                 title="Take snapshot"
                 color="#841584"
@@ -423,6 +496,12 @@ const App = () => {
               <Button
                 onPress={onPressLearnMore}
                 title="Toggle Status"
+                color="#841584"
+              />
+
+              <Button
+                onPress={onPressTurnOnBulb}
+                title="call turn on bulb"
                 color="#841584"
               />
 
@@ -498,5 +577,10 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 });
+
+const marginStyle: ViewStyle = {
+  marginTop: 10,
+  marginBottom: 20,
+};
 
 export default App;

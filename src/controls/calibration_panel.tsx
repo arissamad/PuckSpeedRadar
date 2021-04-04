@@ -51,6 +51,7 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
   const [calibrationMode, setCalibrationMode] = useState<CalibrationMode>('c1');
 
   const [name, setName] = useState('');
+  const [calibrationDistance, setCalibrationDistance] = useState('1');
 
   useEffect(() => {
     const loadCalibrationPoints = async () => {
@@ -69,6 +70,8 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
       const boundsY2 = (await AsyncStorage.getItem('boundsY2')) ?? 100;
 
       const name = (await AsyncStorage.getItem('name')) ?? 'Aris';
+      const calibrationDistance =
+        (await AsyncStorage.getItem('calibrationDistance')) ?? '1';
 
       setLeftCalibrationPoint({
         x: Number(leftCalibrationX),
@@ -82,6 +85,8 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
 
       setUpperLeftBoundary({x: Number(boundsX1), y: Number(boundsY1)});
       setLowerRightBoundary({x: Number(boundsX2), y: Number(boundsY2)});
+
+      setCalibrationDistance(calibrationDistance);
 
       setLoadedCalibrationPoint(true);
 
@@ -152,6 +157,11 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
   const updateName = (name: string) => {
     setName(name);
     AsyncStorage.setItem('name', name);
+  };
+
+  const updateCalibrationDistance = (calibrationDistance: string) => {
+    setCalibrationDistance(calibrationDistance);
+    AsyncStorage.setItem('calibrationDistance', calibrationDistance);
   };
 
   const source = {
@@ -230,6 +240,13 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
           style={textInputStyle}
           defaultValue={name}
           onChangeText={updateName}></TextInput>
+      </View>
+      <View style={[leftAlignedRow, {marginTop: 10}]}>
+        <Text style={textLabelStyle}>Calibration Stick Distance (meters):</Text>
+        <TextInput
+          style={textInputStyle}
+          defaultValue={calibrationDistance}
+          onChangeText={updateCalibrationDistance}></TextInput>
       </View>
     </View>
   );

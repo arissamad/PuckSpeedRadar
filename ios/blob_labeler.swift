@@ -259,6 +259,10 @@ class BlobLabeler {
       let blob = allBlobs[i];
       if(blob.getArea() < 100) {
         allBlobs.remove(at: i);
+      } else if (blob.getArea() > 1500) {
+        allBlobs.remove(at: i);
+      } else if(blob.getCircularity() > 200) {
+        allBlobs.remove(at: i);
       }
     }
   }
