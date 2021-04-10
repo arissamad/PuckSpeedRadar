@@ -38,6 +38,13 @@ import MyCamera, {
 } from './src/camera/my_camera';
 import CalibrationPanel from './src/controls/calibration_panel';
 import ControlPanel from './src/controls/control_panel';
+import {
+  deleteVideos,
+  initializeDatabase,
+  insertIntoVideos,
+  selectVideos,
+} from './src/history/database';
+import VideoDetails from './src/history/video_details';
 import StatusBox from './src/status/status_box';
 import calculateCalibration from './src/utils/calculate_calibration';
 import {
@@ -81,6 +88,8 @@ const App = () => {
     });
 
     console.log('We are now listening to image-available');
+
+    initializeDatabase();
   }, []);
   const [status, setStatus] = useState('initialized');
 
@@ -225,14 +234,9 @@ const App = () => {
   };
 
   const [lastVideoDetails, setLastVideoDetails] = useState<VideoDetails>({
-    uri: '',
+    url: '',
     duration: 0,
   });
-
-  type VideoDetails = {
-    uri: string;
-    duration: number;
-  };
 
   const [timer, setTimer] = useState(0);
 
@@ -252,7 +256,7 @@ const App = () => {
 
             if (speedFound) {
               const videoDetails: VideoDetails = {
-                uri: video.path,
+                url: video.path,
                 duration: video.duration,
               };
               setLastVideoDetails(videoDetails);
@@ -308,12 +312,12 @@ const App = () => {
   };
 
   const rerunAnalysis = () => {
-    analyze(lastVideoDetails.uri, lastVideoDetails.duration, 0, -1, () => {});
+    analyze(lastVideoDetails.url, lastVideoDetails.duration, 0, -1, () => {});
   };
 
   const rerunAnalysisSlow = () => {
     analyze(
-      lastVideoDetails.uri,
+      lastVideoDetails.url,
       lastVideoDetails.duration,
       startIndex,
       endIndex,
@@ -335,6 +339,20 @@ const App = () => {
 
   const nothing = () => {
     RNBeep.PlaySysSound(1100);
+  };
+
+  const onCallSql = async () => {
+    console.log('Executing sql');
+    const videoDetails: VideoDetails = {
+      date: new Date(),
+      name: 'Amir',
+      url: 'here is a URL',
+      duration: 5.3,
+      speedMph: 15,
+    };
+    await deleteVideos();
+    await insertIntoVideos(videoDetails);
+    await selectVideos();
   };
 
   // if (cameraConfiguration == undefined) {
@@ -376,7 +394,7 @@ const App = () => {
           const videoDetails = recentVideoDetails[Number(recentIndex)];
           console.log('got video details', videoDetails);
 
-          analyze(videoDetails.uri, videoDetails.duration, 0, -1, () => {});
+          analyze(videoDetails.url, videoDetails.duration, 0, -1, () => {});
         }
       }
     });
@@ -498,6 +516,8 @@ const App = () => {
                 title="Toggle Status"
                 color="#841584"
               />
+
+              <Button onPress={onCallSql} title="callSql" color="#841584" />
 
               <Button
                 onPress={onPressTurnOnBulb}
