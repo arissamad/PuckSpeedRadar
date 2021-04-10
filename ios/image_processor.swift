@@ -104,7 +104,7 @@ class ImageProcessor: NSObject {
         let blobs = self.processImage(cgImage: image!, time: actualTime);
         if(blobs.count == 0) {
           if(calculatedIndex > endIndex - broadSearchStepSize) {
-            successCallback([false]);
+            successCallback([false, 0]);
           }
           return;
         }
@@ -151,9 +151,16 @@ class ImageProcessor: NSObject {
             
             let timeEnd = CFAbsoluteTimeGetCurrent();
             print("  current total runtime=\(self.format(timeEnd - timeStart))")
-            self.calculateAndTransmitSpeed(speeds: self.speeds)
             
-            successCallback([self.numFramesFoundSpeed > 4]);
+            let foundSpeed = self.numFramesFoundSpeed > 4;
+            
+            if(foundSpeed) {
+              let speed = self.calculateAndTransmitSpeed(speeds: self.speeds)
+              successCallback([true, speed]);
+            } else {
+              self.speechSynthesizer.speak(AVSpeechUtterance(string: "No shot found."));
+              successCallback([false, 0]);
+            }
           }
         }
       }
@@ -170,9 +177,9 @@ class ImageProcessor: NSObject {
         if(self.currIndex == Int(endIndex)) {
           let timeEnd = CFAbsoluteTimeGetCurrent();
           print("  current total runtime=\(self.format(timeEnd - timeStart))")
-          self.calculateAndTransmitSpeed(speeds: self.speeds)
+          let speed = self.calculateAndTransmitSpeed(speeds: self.speeds)
           
-          successCallback([]);
+          successCallback([true, speed]);
         }
       }
     }
@@ -257,7 +264,7 @@ class ImageProcessor: NSObject {
     return false;
   }
   
-  func calculateAndTransmitSpeed(speeds: [Double]) {
+  func calculateAndTransmitSpeed(speeds: [Double]) -> Double {
     var avgSpeed: Double = 0;
     
     if(self.speeds.count > 0) {
@@ -277,7 +284,7 @@ class ImageProcessor: NSObject {
     
     if(avgSpeed < 1) {
       self.speechSynthesizer.speak(AVSpeechUtterance(string: "No shot found."));
-      return;
+      return 0;
     }
     
     let speedInMilesPerHour = avgSpeed * 2.23694;
@@ -294,6 +301,8 @@ class ImageProcessor: NSObject {
       let speedEventEmitter = self.bridge.module(for: SpeedEventEmitter.self) as? SpeedEventEmitter
       speedEventEmitter!.sendEvent(withName: "speed-available", body: self.format(speedInMilesPerHour));
     }
+    
+    return speedInMilesPerHour;
   }
   
   func processImage(cgImage: CGImage, time: CMTime) -> [Blob] {

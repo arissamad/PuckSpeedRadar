@@ -24,7 +24,6 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import RNBeep from 'react-native-a-beep';
 import {Camera, PhotoFile} from 'react-native-vision-camera';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import getCameraConfiguration, {
@@ -41,9 +40,9 @@ import ControlPanel from './src/controls/control_panel';
 import {
   deleteVideos,
   initializeDatabase,
-  insertIntoVideos,
   selectVideos,
 } from './src/history/database';
+import moveAndSaveFile from './src/history/move_and_save_file';
 import VideoDetails from './src/history/video_details';
 import StatusBox from './src/status/status_box';
 import calculateCalibration from './src/utils/calculate_calibration';
@@ -160,7 +159,7 @@ const App = () => {
     duration: number,
     startIndex: number,
     endIndex: number,
-    callback: (speedFound: boolean) => void,
+    callback: (speedFound: boolean, speed: number) => void,
   ) => {
     AsyncStorage.multiGet(
       [
@@ -225,20 +224,13 @@ const App = () => {
           boundsY2,
           startIndex,
           endIndex,
-          (speedFound: boolean) => {
-            callback(speedFound);
+          (speedFound: boolean, speed: number) => {
+            callback(speedFound, speed);
           },
         );
       },
     );
   };
-
-  const [lastVideoDetails, setLastVideoDetails] = useState<VideoDetails>({
-    url: '',
-    duration: 0,
-  });
-
-  const [timer, setTimer] = useState(0);
 
   const executeSingleRecordingSequence = async () => {
     console.log('Playing start sound...');
@@ -251,38 +243,25 @@ const App = () => {
           playEndSound();
           console.log('Got video:', video);
 
-          analyze(video.path, video.duration, 0, -1, (speedFound: boolean) => {
-            console.log('returned from analysis speedFound=', speedFound);
-
-            if (speedFound) {
-              const videoDetails: VideoDetails = {
-                url: video.path,
-                duration: video.duration,
-              };
-              setLastVideoDetails(videoDetails);
-              AsyncStorage.getItem('recentVideoDetails').then(
-                (value: string | null) => {
-                  var recentVideoDetails: VideoDetails[];
-                  if (value) {
-                    recentVideoDetails = JSON.parse(value);
-                  } else {
-                    recentVideoDetails = [];
-                  }
-
-                  recentVideoDetails.unshift(videoDetails);
-                  if (recentVideoDetails.length > 3) {
-                    recentVideoDetails.splice(3, 5);
-                  }
-
-                  AsyncStorage.setItem(
-                    'recentVideoDetails',
-                    JSON.stringify(recentVideoDetails),
-                  );
-                },
+          analyze(
+            video.path,
+            video.duration,
+            0,
+            -1,
+            async (speedFound: boolean, speed: number) => {
+              console.log(
+                'returned from analysis speedFound=',
+                speedFound,
+                ' speed=',
+                speed,
               );
-            }
-            resolve();
-          });
+
+              if (speedFound) {
+                await moveAndSaveFile(video.path, video.duration, speed);
+              }
+              resolve();
+            },
+          );
         },
         onRecordingError: (error) => {
           console.error('Error recording:', error);
@@ -311,48 +290,21 @@ const App = () => {
     cameraRef.current?.stopRecording();
   };
 
-  const rerunAnalysis = () => {
-    analyze(lastVideoDetails.url, lastVideoDetails.duration, 0, -1, () => {});
-  };
+  const rerunAnalysis = () => {};
 
-  const rerunAnalysisSlow = () => {
-    analyze(
-      lastVideoDetails.url,
-      lastVideoDetails.duration,
-      startIndex,
-      endIndex,
-      () => {},
-    );
-  };
+  const rerunAnalysisSlow = () => {};
 
   const playSound = async () => {
     playErrorSound();
-    // await playStartSound();
-    // await sleep(5000);
-    // await playEndSound();
-    // for (var i = 1109; i < 1119; i++) {
-    //   console.log('Playing', i);
-    //   RNBeep.PlaySysSound(i);
-    //   await new Promise((r) => setTimeout(r, 2000));
-    // }
-  };
-
-  const nothing = () => {
-    RNBeep.PlaySysSound(1100);
   };
 
   const onCallSql = async () => {
     console.log('Executing sql');
-    const videoDetails: VideoDetails = {
-      date: new Date(),
-      name: 'Amir',
-      url: 'here is a URL',
-      duration: 5.3,
-      speedMph: 15,
-    };
-    await deleteVideos();
-    await insertIntoVideos(videoDetails);
     await selectVideos();
+  };
+
+  const onPressResetFiles = async () => {
+    await deleteVideos();
   };
 
   // if (cameraConfiguration == undefined) {
@@ -522,6 +474,12 @@ const App = () => {
               <Button
                 onPress={onPressTurnOnBulb}
                 title="call turn on bulb"
+                color="#841584"
+              />
+
+              <Button
+                onPress={onPressResetFiles}
+                title="Reset Files"
                 color="#841584"
               />
 
