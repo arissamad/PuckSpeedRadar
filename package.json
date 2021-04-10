@@ -20,6 +20,7 @@
     "react-native-beep-tone": "^1.0.2",
     "react-native-fix-ios-version": "^2.0.1",
     "react-native-fs": "^2.17.0",
+    "react-native-sqlite-storage": "^5.0.0",
     "react-native-swift": "^1.2.3",
     "react-native-vision-camera": "^1.0.0"
   },
