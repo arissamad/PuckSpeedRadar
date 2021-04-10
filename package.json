@@ -13,6 +13,7 @@
     "@react-native-community/async-storage": "^1.12.1",
     "@react-native-firebase/app": "^11.0.0",
     "@react-native-firebase/firestore": "^11.0.0",
+    "dateformat": "^4.5.1",
     "react": "16.13.1",
     "react-native": "0.63.4",
     "react-native-a-beep": "^1.0.7",
