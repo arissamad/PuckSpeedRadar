@@ -8,7 +8,6 @@
  * @format
  */
 
-import AsyncStorage from '@react-native-community/async-storage';
 import React, {useEffect, useRef, useState} from 'react';
 import {
   Button,
@@ -20,7 +19,6 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   View,
   ViewStyle,
 } from 'react-native';
@@ -30,11 +28,7 @@ import getCameraConfiguration, {
   CameraConfig,
 } from './src/camera/get_camera_configuration';
 import getPermissions from './src/camera/get_permissions';
-import MyCamera, {
-  imageHeight,
-  imageResizeFactor,
-  imageWidth,
-} from './src/camera/my_camera';
+import MyCamera, {imageHeight, imageWidth} from './src/camera/my_camera';
 import CalibrationPanel from './src/controls/calibration_panel';
 import ControlPanel from './src/controls/control_panel';
 import {
@@ -43,14 +37,8 @@ import {
   selectVideos,
 } from './src/history/database';
 import moveAndSaveFile from './src/history/move_and_save_file';
-import VideoDetails from './src/history/video_details';
 import StatusBox from './src/status/status_box';
-import calculateCalibration from './src/utils/calculate_calibration';
-import {
-  leftAlignedRow,
-  textInputStyle,
-  textLabelStyle,
-} from './src/utils/common_styles';
+import getCalibrationInfo from './src/controls/get_calibration_info';
 import playEndSound from './src/utils/play_end_sound';
 import playErrorSound from './src/utils/play_error_sound';
 import playStartSound from './src/utils/play_start_sound';
@@ -65,7 +53,6 @@ const App = () => {
   ] = useState<CameraConfig>();
 
   const [permissionGranted, setPermissionGranted] = useState(false);
-  const [name, setName] = useState('');
 
   useEffect(() => {
     getPermissions(setPermissionGranted);
@@ -91,15 +78,6 @@ const App = () => {
     initializeDatabase();
   }, []);
   const [status, setStatus] = useState('initialized');
-
-  const onPressLearnMore = () => {
-    console.log('this is just a log 3');
-    if (status == 'failing') {
-      setStatus('succeeding');
-    } else {
-      setStatus('failing');
-    }
-  };
 
   const [photoUri, setPhotoUri] = useState('');
 
@@ -154,80 +132,28 @@ const App = () => {
     isRecordingRef.current = false;
   };
 
-  const analyze = (
+  const analyze = async (
     uri: string,
     duration: number,
     startIndex: number,
     endIndex: number,
     callback: (speedFound: boolean, speed: number) => void,
   ) => {
-    AsyncStorage.multiGet(
-      [
-        'leftCalibrationX',
-        'leftCalibrationY',
-        'rightCalibrationX',
-        'rightCalibrationY',
-        'boundsX1',
-        'boundsY1',
-        'boundsX2',
-        'boundsY2',
-        'name',
-        'calibrationDistance',
-      ],
-      (errors, results) => {
-        console.log('Any errors during AsyncStorage.multiGet: ', errors);
-        if (results == null) {
-          return;
-        }
+    const calibrationInfo = await getCalibrationInfo();
 
-        const leftCalibrationX = Number(results[0][1]);
-        const leftCalibrationY = Number(results[1][1]);
-        const rightCalibrationX = Number(results[2][1]);
-        const rightCalibrationY = Number(results[3][1]);
-
-        const boundsX1 = Number(results[4][1]) / imageResizeFactor;
-        const boundsY1 = Number(results[5][1]) / imageResizeFactor;
-        const boundsX2 = Number(results[6][1]) / imageResizeFactor;
-        const boundsY2 = Number(results[7][1]) / imageResizeFactor;
-
-        const name = results[8][1];
-        setName(name ?? 'Aris');
-
-        const calibrationDistance = results[9][1];
-
-        console.log(
-          'calibration points',
-          leftCalibrationX,
-          leftCalibrationY,
-          rightCalibrationX,
-          rightCalibrationY,
-        );
-        console.log('bounds', boundsX1, boundsY1, boundsX2, boundsY2);
-
-        const pixelsPerMeter = calculateCalibration(
-          leftCalibrationX,
-          leftCalibrationY,
-          rightCalibrationX,
-          rightCalibrationY,
-          Number(calibrationDistance),
-          imageResizeFactor,
-        );
-
-        NativeModules.ImageProcessor.process(
-          uri,
-          fps,
-          duration,
-          pixelsPerMeter,
-          boundsX1,
-          boundsY1,
-          boundsX2,
-          boundsY2,
-          startIndex,
-          endIndex,
-          (speedFound: boolean, speed: number) => {
-            callback(speedFound, speed);
-          },
-        );
+    NativeModules.ImageProcessor.process(
+      uri,
+      fps,
+      duration,
+      calibrationInfo.pixelsPerMeter,
+      calibrationInfo.boundsX1,
+      calibrationInfo.boundsY1,
+      calibrationInfo.boundsX2,
+      calibrationInfo.boundsY2,
+      startIndex,
+      endIndex,
+      (speedFound: boolean, speed: number) => {
+        callback(speedFound, speed);
       },
     );
   };
@@ -292,8 +218,6 @@ const App = () => {
 
   const rerunAnalysis = () => {};
 
-  const rerunAnalysisSlow = () => {};
-
   const playSound = async () => {
     playErrorSound();
   };
@@ -307,49 +231,10 @@ const App = () => {
     await deleteVideos();
   };
 
-  // if (cameraConfiguration == undefined) {
-  //   console.log('camera config not ready');
-  // } else {
-  //   console.log('camera config ready');
-  // }
-
-  // if (permissionGranted) {
-  //   console.log('Permission is all set');
-  // } else {
-  //   console.log('Permission not yet set');
-  // }
-
   const showCamera = cameraConfiguration != undefined && permissionGranted;
-
-  const [startIndex, setStartIndex] = useState(0);
-  const [endIndex, setEndIndex] = useState(100);
-
-  const changeStartIndex = (value: string) => {
-    setStartIndex(Number(value));
-  };
-
-  const changeEndIndex = (value: string) => {
-    setEndIndex(Number(value));
-  };
 
   const onPressTurnOnBulb = () => {
     NativeModules.Bulb.turnOn();
-  };
-
-  const [recentIndex, setRecentIndex] = useState('');
-
-  const rerunRecentAnalysis = () => {
-    AsyncStorage.getItem('recentVideoDetails').then((value: string | null) => {
-      if (value) {
-        const recentVideoDetails: VideoDetails[] = JSON.parse(value);
-        if (recentVideoDetails.length > Number(recentIndex)) {
-          const videoDetails = recentVideoDetails[Number(recentIndex)];
-          console.log('got video details', videoDetails);
-
-          analyze(videoDetails.url, videoDetails.duration, 0, -1, () => {});
-        }
-      }
-    });
   };
 
   return (
@@ -360,8 +245,6 @@ const App = () => {
           contentInsetAdjustmentBehavior="automatic"
           style={styles.scrollView}>
           <View style={styles.body}>
-            <StatusBox status={status}></StatusBox>
-
             <View style={styles.cameraHolderOuter}>
               <View style={styles.cameraHolderInner}>
                 <MyCamera
@@ -410,39 +293,6 @@ const App = () => {
                 color="#841584"
               />
 
-              <View style={[leftAlignedRow, marginStyle]}>
-                <Text style={textLabelStyle}>
-                  Recent Index (0 most recent):
-                </Text>
-                <TextInput
-                  style={textInputStyle}
-                  keyboardType={'numeric'}
-                  onChangeText={setRecentIndex}></TextInput>
-                <Button
-                  onPress={rerunRecentAnalysis}
-                  title="Rerun Analysis"
-                  color="#841584"
-                />
-              </View>
-
-              <View style={[leftAlignedRow, marginStyle]}>
-                <Text style={textLabelStyle}>Start Index:</Text>
-                <TextInput
-                  style={textInputStyle}
-                  keyboardType={'numeric'}
-                  onChangeText={changeStartIndex}></TextInput>
-                <Text style={textLabelStyle}>End Index:</Text>
-                <TextInput
-                  style={textInputStyle}
-                  keyboardType={'numeric'}
-                  onChangeText={changeEndIndex}></TextInput>
-                <Button
-                  onPress={rerunAnalysisSlow}
-                  title="Rerun Last Analysis - Slow"
-                  color="#841584"
-                />
-              </View>
-
               <Button
                 onPress={callSwiftWithSimulatorVideo}
                 title="Call swift (Simulator Videos)"
@@ -464,12 +314,10 @@ const App = () => {
               />
 
               <Button
-                onPress={onPressLearnMore}
-                title="Toggle Status"
+                onPress={onCallSql}
+                title="Check Video Files"
                 color="#841584"
               />
-
-              <Button onPress={onCallSql} title="callSql" color="#841584" />
 
               <Button
                 onPress={onPressTurnOnBulb}
@@ -483,6 +331,7 @@ const App = () => {
                 color="#841584"
               />
 
+              <StatusBox status={status}></StatusBox>
               <View
                 style={{
                   width: '100%',

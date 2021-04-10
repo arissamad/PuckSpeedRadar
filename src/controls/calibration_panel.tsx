@@ -16,6 +16,7 @@ import {
   textLabelStyle,
 } from '../utils/common_styles';
 import Bounds from './bounds';
+import getCalibrationInfo from './get_calibration_info';
 
 type Props = {
   showPanel: boolean;
@@ -51,45 +52,33 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
   const [calibrationMode, setCalibrationMode] = useState<CalibrationMode>('c1');
 
   const [name, setName] = useState('');
-  const [calibrationDistance, setCalibrationDistance] = useState('1');
+  const [calibrationDistance, setCalibrationDistance] = useState(1);
 
   useEffect(() => {
     const loadCalibrationPoints = async () => {
-      const leftCalibrationX =
-        (await AsyncStorage.getItem('leftCalibrationX')) ?? 50;
-      const leftCalibrationY =
-        (await AsyncStorage.getItem('leftCalibrationY')) ?? imageHeight / 2;
-      const rightCalibrationX =
-        (await AsyncStorage.getItem('rightCalibrationX')) ?? imageWidth - 50;
-      const rightCalibrationY =
-        (await AsyncStorage.getItem('rightCalibrationY')) ?? imageHeight / 2;
-
-      const boundsX1 = (await AsyncStorage.getItem('boundsX1')) ?? 10;
-      const boundsY1 = (await AsyncStorage.getItem('boundsY1')) ?? 10;
-      const boundsX2 = (await AsyncStorage.getItem('boundsX2')) ?? 100;
-      const boundsY2 = (await AsyncStorage.getItem('boundsY2')) ?? 100;
-
-      const name = (await AsyncStorage.getItem('name')) ?? 'Aris';
-      const calibrationDistance =
-        (await AsyncStorage.getItem('calibrationDistance')) ?? '1';
+      const calibrationInfo = await getCalibrationInfo();
 
       setLeftCalibrationPoint({
-        x: Number(leftCalibrationX),
-        y: Number(leftCalibrationY),
+        x: Number(calibrationInfo.leftCalibrationX),
+        y: Number(calibrationInfo.leftCalibrationY),
       });
 
       setRightCalibrationPoint({
-        x: Number(rightCalibrationX),
-        y: Number(rightCalibrationY),
+        x: Number(calibrationInfo.rightCalibrationX),
+        y: Number(calibrationInfo.rightCalibrationY),
       });
 
-      setUpperLeftBoundary({x: Number(boundsX1), y: Number(boundsY1)});
-      setLowerRightBoundary({x: Number(boundsX2), y: Number(boundsY2)});
+      setUpperLeftBoundary({
+        x: Number(calibrationInfo.boundsX1),
+        y: Number(calibrationInfo.boundsY1),
+      });
+      setLowerRightBoundary({
+        x: Number(calibrationInfo.boundsX2),
+        y: Number(calibrationInfo.boundsY2),
+      });
 
-      setCalibrationDistance(calibrationDistance);
-
+      setCalibrationDistance(calibrationInfo.calibrationDistance);
       setLoadedCalibrationPoint(true);
-
       setName(name);
 
       console.log('loaded calibration points');
@@ -160,8 +149,8 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
   };
 
   const updateCalibrationDistance = (calibrationDistance: string) => {
-    setCalibrationDistance(calibrationDistance);
-    AsyncStorage.setItem('calibrationDistance', calibrationDistance);
+    setCalibrationDistance(Number(calibrationDistance));
+    AsyncStorage.setItem('calibrationDistance', '' + calibrationDistance);
   };
 
   const source = {
@@ -245,7 +234,7 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
         <Text style={textLabelStyle}>Calibration Stick Distance (meters):</Text>
         <TextInput
           style={textInputStyle}
-          defaultValue={calibrationDistance}
+          defaultValue={'' + calibrationDistance}
           onChangeText={updateCalibrationDistance}></TextInput>
       </View>
     </View>
