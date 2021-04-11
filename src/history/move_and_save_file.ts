@@ -10,8 +10,10 @@ export default async function moveAndSaveFile(
   speedMph: number,
 ) {
   const now = new Date();
-  const newFileName = dateFormat(now, 'yyyy-mm-dd-HH-MM-ss');
-  var newFilePath = RNFS.DocumentDirectoryPath + '/' + newFileName + '.mov';
+  const newFileName = `${dateFormat(now, 'yyyy-mm-dd-HH-MM-ss')}.mov`;
+
+  var newFilePath = RNFS.DocumentDirectoryPath + '/' + newFileName;
+  console.log('Moving file to ', newFilePath);
   await RNFS.moveFile(originalFilePath, newFilePath).catch((error) => {
     console.log('problem moving file:', error);
   });
@@ -20,7 +22,7 @@ export default async function moveAndSaveFile(
 
   const videoDetails: VideoDetails = {
     date: new Date(),
-    url: newFilePath,
+    url: newFileName,
     name: name.toLowerCase(),
     duration,
     speedMph,

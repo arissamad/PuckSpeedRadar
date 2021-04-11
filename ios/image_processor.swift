@@ -101,7 +101,14 @@ class ImageProcessor: NSObject {
           return;
         }
         
+        if(image == nil) {
+          print("Something wrong, image is nil");
+          print("error is", error);
+          return;
+        }
+        
         let blobs = self.processImage(cgImage: image!, time: actualTime);
+        
         if(blobs.count == 0) {
           if(calculatedIndex > endIndex - broadSearchStepSize) {
             successCallback([false, 0]);

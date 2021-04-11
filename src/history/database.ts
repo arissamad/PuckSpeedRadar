@@ -24,6 +24,9 @@ export function initializeDatabase() {
       console.log('db creation failed');
     },
   );
+  console.log(
+    "and now we're back from opening db, which means global.db is set",
+  );
 }
 
 export async function deleteVideos() {
@@ -37,7 +40,7 @@ export async function insertIntoVideos(videoDetails: VideoDetails) {
   await executeSql(
     'insert into videos (date, name, url, duration, speedMph) values (?, ?, ?, ?, ?)',
     [
-      dateFormat(videoDetails.date, 'yyyy-mm-dd HH:MM:ss'),
+      sqlDate(videoDetails.date),
       videoDetails.name,
       videoDetails.url,
       videoDetails.duration,
@@ -55,7 +58,10 @@ export async function selectVideos() {
   console.log('Done selecting. Results: ', results);
 }
 
-async function executeSql(sql: string, parameters: any[] = []): Promise<any[]> {
+export async function executeSql(
+  sql: string,
+  parameters: any[] = [],
+): Promise<any[]> {
   const db: SQLiteDatabase = (global as any).db;
 
   const promise = new Promise<any[]>((resolve, reject) => {
@@ -79,4 +85,8 @@ async function executeSql(sql: string, parameters: any[] = []): Promise<any[]> {
   });
 
   return promise;
+}
+
+export function sqlDate(date: Date): string {
+  return dateFormat(date);
 }

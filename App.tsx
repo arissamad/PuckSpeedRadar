@@ -22,6 +22,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import RNFS from 'react-native-fs';
 import {Camera, PhotoFile} from 'react-native-vision-camera';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import getCameraConfiguration, {
@@ -31,14 +32,16 @@ import getPermissions from './src/camera/get_permissions';
 import MyCamera, {imageHeight, imageWidth} from './src/camera/my_camera';
 import CalibrationPanel from './src/controls/calibration_panel';
 import ControlPanel from './src/controls/control_panel';
+import getCalibrationInfo from './src/controls/get_calibration_info';
 import {
   deleteVideos,
   initializeDatabase,
   selectVideos,
 } from './src/history/database';
 import moveAndSaveFile from './src/history/move_and_save_file';
+import ShotHistory from './src/history/shot_history';
+import VideoDetails from './src/history/video_details';
 import StatusBox from './src/status/status_box';
-import getCalibrationInfo from './src/controls/get_calibration_info';
 import playEndSound from './src/utils/play_end_sound';
 import playErrorSound from './src/utils/play_error_sound';
 import playStartSound from './src/utils/play_start_sound';
@@ -132,6 +135,8 @@ const App = () => {
     isRecordingRef.current = false;
   };
 
+  const [progression, setProgression] = useState(1);
+
   const analyze = async (
     uri: string,
     duration: number,
@@ -184,6 +189,7 @@ const App = () => {
 
               if (speedFound) {
                 await moveAndSaveFile(video.path, video.duration, speed);
+                setProgression(progression + 1);
               }
               resolve();
             },
@@ -227,8 +233,36 @@ const App = () => {
     await selectVideos();
   };
 
+  const analyzeShot = (videoDetails: VideoDetails) => {
+    analyze(
+      `file:///private/${RNFS.DocumentDirectoryPath}/${videoDetails.url}`,
+      videoDetails.duration,
+      0,
+      -1,
+      async (speedFound: boolean, speed: number) => {
+        console.log('Came back from analysis.');
+      },
+    );
+  };
+
+  const onPressListFiles = async () => {
+    console.log('Current document directory path:', RNFS.DocumentDirectoryPath);
+
+    const items = await RNFS.readDir(RNFS.DocumentDirectoryPath);
+    console.log('ITems length is ', items.length);
+    for (var i = 0; i < items.length; i++) {
+      const item = items[i];
+      console.log('Found file: ', item.name, item.ctime, item.path, item.size);
+    }
+  };
+
   const onPressResetFiles = async () => {
     await deleteVideos();
+    setProgression(1);
+  };
+
+  const increaseProgression = () => {
+    setProgression(progression + 1);
   };
 
   const showCamera = cameraConfiguration != undefined && permissionGranted;
@@ -326,10 +360,26 @@ const App = () => {
               />
 
               <Button
+                onPress={increaseProgression}
+                title="Increase progression"
+                color="#841584"
+              />
+
+              <Button
+                onPress={onPressListFiles}
+                title="List Files"
+                color="#841584"
+              />
+
+              <Button
                 onPress={onPressResetFiles}
                 title="Reset Files"
                 color="#841584"
               />
+
+              <ShotHistory
+                progression={progression}
+                selectedShot={analyzeShot}></ShotHistory>
 
               <StatusBox status={status}></StatusBox>
               <View
