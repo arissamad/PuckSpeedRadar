@@ -15,6 +15,7 @@
     "@react-native-firebase/firestore": "^11.0.0",
     "@types/dateformat": "^3.0.1",
     "@types/react-native-sqlite-storage": "^5.0.0",
+    "@types/react-native-table-component": "^1.2.0",
     "dateformat": "^4.5.1",
     "react": "16.13.1",
     "react-native": "0.63.4",
@@ -24,6 +25,7 @@
     "react-native-fs": "^2.17.0",
     "react-native-sqlite-storage": "^5.0.0",
     "react-native-swift": "^1.2.3",
+    "react-native-table-component": "^1.2.1",
     "react-native-vision-camera": "^1.0.0"
   },
   "devDependencies": {
