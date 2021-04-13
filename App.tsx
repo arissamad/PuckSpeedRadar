@@ -29,7 +29,11 @@ import getCameraConfiguration, {
   CameraConfig,
 } from './src/camera/get_camera_configuration';
 import getPermissions from './src/camera/get_permissions';
-import MyCamera, {imageHeight, imageWidth} from './src/camera/my_camera';
+import MyCamera, {
+  imageHeight,
+  imageResizeFactor,
+  imageWidth,
+} from './src/camera/my_camera';
 import CalibrationPanel from './src/controls/calibration_panel';
 import ControlPanel from './src/controls/control_panel';
 import getCalibrationInfo from './src/controls/get_calibration_info';
@@ -151,10 +155,10 @@ const App = () => {
       fps,
       duration,
       calibrationInfo.pixelsPerMeter,
-      calibrationInfo.boundsX1,
-      calibrationInfo.boundsY1,
-      calibrationInfo.boundsX2,
-      calibrationInfo.boundsY2,
+      calibrationInfo.boundsX1 / imageResizeFactor,
+      calibrationInfo.boundsY1 / imageResizeFactor,
+      calibrationInfo.boundsX2 / imageResizeFactor,
+      calibrationInfo.boundsY2 / imageResizeFactor,
       startIndex,
       endIndex,
       (speedFound: boolean, speed: number) => {
@@ -258,6 +262,11 @@ const App = () => {
 
   const onPressResetFiles = async () => {
     await deleteVideos();
+    const items = await RNFS.readDir(RNFS.DocumentDirectoryPath);
+    for (var i = 0; i < items.length; i++) {
+      const item = items[i];
+      RNFS.unlink(item.path);
+    }
     setProgression(1);
   };
 

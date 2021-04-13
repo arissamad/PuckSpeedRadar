@@ -91,7 +91,7 @@ class ImageProcessor: NSObject {
       var alreadyFoundFrame = false;
       let broadSearchFrameTimes = calculateFrameTimes(startIndex: 0, endIndex: endIndex, step: broadSearchStepSize)
       currIndex = 0;
-      
+       
       assetImageGenerator.generateCGImagesAsynchronously(forTimes: broadSearchFrameTimes) { (requestedTime: CMTime, image: CGImage?, actualTime: CMTime, result: AVAssetImageGenerator.Result, error: Error?) in
         let convertedTime = requestedTime.convertScale(Int32(self.fps), method: CMTimeRoundingMethod.roundHalfAwayFromZero);
         let calculatedIndex = convertedTime.value;

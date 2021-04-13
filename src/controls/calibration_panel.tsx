@@ -28,24 +28,45 @@ export type Coordinate = {
   y: number;
 };
 
+const initialLeftCalibrationPoint = {
+  x: 50,
+  y: imageHeight / 2,
+};
+
+const initialRightCalibrationPoint = {
+  x: imageWidth - 50,
+  y: imageHeight / 2,
+};
+
+const initialUpperLeftBoundaryPoint = {
+  x: 10,
+  y: 10,
+};
+
+console.log('image width is ', imageWidth);
+
+const initialLowerRightBoundaryPoint = {
+  x: imageWidth - 10,
+  y: imageHeight - 10,
+};
+
 type CalibrationMode = 'c1' | 'c2' | 'b1' | 'b2';
 
 export default function CalibrationPanel(props: Props): React.ReactElement {
-  const [leftCalibrationPoint, setLeftCalibrationPoint] = useState({
-    x: 50,
-    y: imageHeight / 2,
-  });
+  const [leftCalibrationPoint, setLeftCalibrationPoint] = useState(
+    initialLeftCalibrationPoint,
+  );
 
-  const [rightCalibrationPoint, setRightCalibrationPoint] = useState({
-    x: imageWidth - 50,
-    y: imageHeight / 2,
-  });
+  const [rightCalibrationPoint, setRightCalibrationPoint] = useState(
+    initialRightCalibrationPoint,
+  );
 
-  const [upperLeftBoundary, setUpperLeftBoundary] = useState({x: 10, y: 10});
-  const [lowerRightBoundary, setLowerRightBoundary] = useState({
-    x: 100,
-    y: 100,
-  });
+  const [upperLeftBoundary, setUpperLeftBoundary] = useState(
+    initialUpperLeftBoundaryPoint,
+  );
+  const [lowerRightBoundary, setLowerRightBoundary] = useState(
+    initialLowerRightBoundaryPoint,
+  );
 
   const [loadedCalibrationPoint, setLoadedCalibrationPoint] = useState(false);
 
@@ -54,35 +75,36 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
   const [name, setName] = useState('');
   const [calibrationDistance, setCalibrationDistance] = useState(1);
 
+  const loadCalibrationPoints = async () => {
+    const calibrationInfo = await getCalibrationInfo();
+
+    setLeftCalibrationPoint({
+      x: Number(calibrationInfo.leftCalibrationX),
+      y: Number(calibrationInfo.leftCalibrationY),
+    });
+
+    setRightCalibrationPoint({
+      x: Number(calibrationInfo.rightCalibrationX),
+      y: Number(calibrationInfo.rightCalibrationY),
+    });
+
+    setUpperLeftBoundary({
+      x: Number(calibrationInfo.boundsX1),
+      y: Number(calibrationInfo.boundsY1),
+    });
+    setLowerRightBoundary({
+      x: Number(calibrationInfo.boundsX2),
+      y: Number(calibrationInfo.boundsY2),
+    });
+
+    setCalibrationDistance(calibrationInfo.calibrationDistance);
+    setLoadedCalibrationPoint(true);
+    setName(name);
+
+    console.log('loaded calibration points');
+  };
+
   useEffect(() => {
-    const loadCalibrationPoints = async () => {
-      const calibrationInfo = await getCalibrationInfo();
-
-      setLeftCalibrationPoint({
-        x: Number(calibrationInfo.leftCalibrationX),
-        y: Number(calibrationInfo.leftCalibrationY),
-      });
-
-      setRightCalibrationPoint({
-        x: Number(calibrationInfo.rightCalibrationX),
-        y: Number(calibrationInfo.rightCalibrationY),
-      });
-
-      setUpperLeftBoundary({
-        x: Number(calibrationInfo.boundsX1),
-        y: Number(calibrationInfo.boundsY1),
-      });
-      setLowerRightBoundary({
-        x: Number(calibrationInfo.boundsX2),
-        y: Number(calibrationInfo.boundsY2),
-      });
-
-      setCalibrationDistance(calibrationInfo.calibrationDistance);
-      setLoadedCalibrationPoint(true);
-      setName(name);
-
-      console.log('loaded calibration points');
-    };
     loadCalibrationPoints();
   }, []);
 
@@ -90,7 +112,24 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
     return <></>;
   }
 
-  const onPressReset = () => {};
+  const onPressReset = () => {
+    AsyncStorage.multiSet(
+      [
+        ['leftCalibrationX', '' + initialLeftCalibrationPoint.x],
+        ['leftCalibrationY', '' + initialLeftCalibrationPoint.y],
+        ['rightCalibrationX', '' + initialRightCalibrationPoint.x],
+        ['rightCalibrationY', '' + initialRightCalibrationPoint.y],
+        ['boundsX1', '' + initialUpperLeftBoundaryPoint.x],
+        ['boundsY1', '' + initialUpperLeftBoundaryPoint.y],
+        ['boundsX2', '' + initialLowerRightBoundaryPoint.x],
+        ['boundsY2', '' + initialLowerRightBoundaryPoint.y],
+      ],
+      () => {
+        console.log('Values have been reset');
+        loadCalibrationPoints();
+      },
+    );
+  };
 
   const setCalibrationPoint = (diffCoordinate: Coordinate) => {
     console.log('calibrationMode', calibrationMode, diffCoordinate);
@@ -186,6 +225,11 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
         <View style={twoControllerHolder}>
           <Controller
             onChange={setCalibrationPoint}
+            magnitude={20}
+            onPressReset={onPressReset}></Controller>
+          <Controller
+            onChange={setCalibrationPoint}
+            magnitude={2}
             onPressReset={onPressReset}></Controller>
         </View>
         <View style={buttonRow}>
@@ -243,14 +287,15 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
 
 type ControllerProps = {
   onChange: (diffCoordinate: Coordinate) => void;
+  magnitude: number;
   onPressReset: () => void;
 };
 
 function Controller(props: ControllerProps): React.ReactElement {
   const onPress = (xChange: number, yChange: number) => {
     return () => {
-      const diffX = xChange * 10;
-      const diffY = yChange * 10;
+      const diffX = xChange * props.magnitude;
+      const diffY = yChange * props.magnitude;
       props.onChange({
         x: diffX,
         y: diffY,
@@ -261,6 +306,7 @@ function Controller(props: ControllerProps): React.ReactElement {
   return (
     <View style={controllerOverall}>
       <Button title={'RESET'} onPress={props.onPressReset}></Button>
+      <View style={{padding: 30}}></View>
       <View style={roundButton}>
         <Button title={'⇧'} onPress={onPress(0, -1)}></Button>
       </View>

@@ -43,23 +43,21 @@ export default async function getCalibrationInfo() {
         const rightCalibrationX = Number(results[2][1]);
         const rightCalibrationY = Number(results[3][1]);
 
-        const boundsX1 = Number(results[4][1]) / imageResizeFactor;
-        const boundsY1 = Number(results[5][1]) / imageResizeFactor;
-        const boundsX2 = Number(results[6][1]) / imageResizeFactor;
-        const boundsY2 = Number(results[7][1]) / imageResizeFactor;
+        const boundsX1 = Number(results[4][1]);
+        const boundsY1 = Number(results[5][1]);
+        const boundsX2 = Number(results[6][1]);
+        const boundsY2 = Number(results[7][1]);
 
         const name = results[8][1] ?? 'noname';
 
         const calibrationDistance = Number(results[9][1]);
 
         console.log(
-          'calibration points',
-          leftCalibrationX,
-          leftCalibrationY,
-          rightCalibrationX,
-          rightCalibrationY,
+          `calibration points: (${leftCalibrationX}, ${leftCalibrationY}) - (${rightCalibrationX}, ${rightCalibrationY})`,
         );
-        console.log('bounds', boundsX1, boundsY1, boundsX2, boundsY2);
+        console.log(
+          `bounds: (${boundsX1}, ${boundsY1}) - (${boundsX2}, ${boundsY2})`,
+        );
 
         const pixelsPerMeter = calculateCalibration(
           leftCalibrationX,
