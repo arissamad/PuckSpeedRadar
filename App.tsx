@@ -142,6 +142,8 @@ const App = () => {
   };
 
   const [progression, setProgression] = useState(1);
+  const progressionRef = useRef(1);
+  progressionRef.current = progression;
 
   const analyze = async (
     uri: string,
@@ -198,7 +200,7 @@ const App = () => {
 
               if (speedFound) {
                 await moveAndSaveFile(video.path, video.duration, speed);
-                setProgression(progression + 1);
+                setProgression(progressionRef.current + 1);
               }
               resolve();
             },

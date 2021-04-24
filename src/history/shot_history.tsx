@@ -1,6 +1,7 @@
 import dateFormat from 'dateformat';
 import React, {Dispatch, SetStateAction, useEffect, useState} from 'react';
 import {Button, Text, TextStyle, View, ViewStyle} from 'react-native';
+import RNFS from 'react-native-fs';
 import {Row, Table} from 'react-native-table-component';
 import {executeSql} from './database';
 import VideoDetails from './video_details';
@@ -132,8 +133,11 @@ async function loadHistory(
 }
 
 async function deleteVideo(videoDetails: VideoDetails) {
-  //console.log('video is ', videoDetails);
   await executeSql('delete from videos where rowId = ' + videoDetails.rowId);
+  const filePath = RNFS.DocumentDirectoryPath + '/' + videoDetails.url;
+  await RNFS.unlink(filePath).catch((error) => {
+    console.log('Problem deleting file', error);
+  });
 }
 
 const overallView: ViewStyle = {
