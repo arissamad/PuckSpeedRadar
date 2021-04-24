@@ -1,6 +1,6 @@
 import dateFormat from 'dateformat';
 import React, {Dispatch, SetStateAction, useEffect, useState} from 'react';
-import {Button, TextStyle, View, ViewStyle} from 'react-native';
+import {Button, Text, TextStyle, View, ViewStyle} from 'react-native';
 import {Row, Table} from 'react-native-table-component';
 import {executeSql} from './database';
 import VideoDetails from './video_details';
@@ -12,22 +12,41 @@ type Props = {
 
 export default function ShotHistory(props: Props): React.ReactElement {
   const [videos, setVideos] = useState<VideoDetails[]>([]);
+  const [internalProgression, setInternalProgression] = useState(1);
+  const updateHistory = () => {
+    setInternalProgression(internalProgression + 1);
+  };
 
   console.log('Progression is', props.progression);
 
   useEffect(() => {
     console.log('Loading history');
     loadHistory(setVideos);
-  }, [props.progression]);
+  }, [props.progression, internalProgression]);
 
-  return <View>{renderVideoTable(videos, props)}</View>;
+  return (
+    <View>
+      <View>{renderVideoTable(videos, props, updateHistory)}</View>
+      <View>
+        <Text>Hello, world{internalProgression}</Text>
+      </View>
+    </View>
+  );
 }
 
 function renderVideoTable(
   videos: VideoDetails[],
   props: Props,
+  updateHistory: () => void,
 ): React.ReactElement {
-  const headers = ['Date', 'Time', 'Name', 'Shot speed (MPH)', 'Action'];
+  const headers = [
+    'Delete',
+    'Date',
+    'Time',
+    'Name',
+    'Shot speed (MPH)',
+    'Action',
+  ];
   return (
     <View style={overallView}>
       <Table borderStyle={tableBorderStyle}>
@@ -35,7 +54,7 @@ function renderVideoTable(
           data={headers}
           style={tableHeaderStyle}
           textStyle={textStyle}></Row>
-        {renderVideoRows(videos, props)}
+        {renderVideoRows(videos, props, updateHistory)}
       </Table>
     </View>
   );
@@ -44,29 +63,44 @@ function renderVideoTable(
 function renderVideoRows(
   videos: VideoDetails[],
   props: Props,
+  updateHistory: () => void,
 ): React.ReactElement[] {
   return videos.map<React.ReactElement>(
     (videoDetails: VideoDetails, index: number) => {
-      return renderVideo(videoDetails, props, index);
+      return renderVideo(videoDetails, props, index, updateHistory);
     },
   );
 }
 
-function renderVideo(videoDetails: VideoDetails, props: Props, index: number) {
-  const videoDate = new Date(videoDetails.date);
+function renderVideo(
+  videoDetails: VideoDetails,
+  props: Props,
+  index: number,
+  updateHistory: () => void,
+) {
+  const clickedDelete = async () => {
+    await deleteVideo(videoDetails);
+    console.log('Now updating history');
+    updateHistory();
+  };
+  const deleteButtonElement = (
+    <Button onPress={clickedDelete} title="Delete" color="#841584" />
+  );
+
   const clickedView = () => {
     props.selectedShot(videoDetails);
   };
-
-  const buttonElement = (
+  const analyzeButtonElement = (
     <Button onPress={clickedView} title="Analyze" color="#841584" />
   );
+
   const data = [
-    dateFormat(videoDate, 'mmm dd (ddd)'),
-    dateFormat(videoDate, 'hh:MM TT'),
+    deleteButtonElement,
+    dateFormat(videoDetails.date, 'mmm dd (ddd)'),
+    dateFormat(videoDetails.date, 'hh:MM TT'),
     videoDetails.name,
-    videoDetails.speedMph,
-    buttonElement,
+    videoDetails.speedMph.toFixed(1),
+    analyzeButtonElement,
   ];
   return <Row data={data} key={index} textStyle={textStyle}></Row>;
 }
@@ -78,12 +112,28 @@ async function loadHistory(
 ) {
   const now = new Date();
   const videos: VideoDetails[] = await executeSql(
-    'select rowId, * from videos order by date desc',
-  );
+    'select rowId as rowId, * from videos order by date desc limit 20',
+  ).catch((error) => {
+    console.log('Could not load videos', error);
+    return [];
+  });
 
-  console.log('videos', videos);
+  var regex = /(\d\d\d\d-\d\d-\d\d) (\d\d:\d\d:\d\d)/;
+  for (const video of videos) {
+    const groups = regex.exec(video.date as any);
+    if (groups == null) {
+      continue;
+    }
+    const formattedDate = `${groups?.[1]}T${groups?.[2]}.000+08:00`;
+    video.date = new Date(Date.parse(formattedDate));
+  }
 
   setVideos(videos);
+}
+
+async function deleteVideo(videoDetails: VideoDetails) {
+  //console.log('video is ', videoDetails);
+  await executeSql('delete from videos where rowId = ' + videoDetails.rowId);
 }
 
 const overallView: ViewStyle = {

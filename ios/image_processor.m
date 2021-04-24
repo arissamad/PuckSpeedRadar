@@ -14,6 +14,7 @@ RCT_EXTERN_METHOD(
                   y2: (nonnull NSNumber) y2
                   startIndex: (nonnull NSNumber) startIndex
                   endIndex: (nonnull NSNumber) endIndex
+                  sleepSPerFrame: (nonnull NSNumber) sleepSPerFrame
                   callback: (RCTResponseSenderBlock *) callback
 )
 

@@ -39,6 +39,7 @@ import ControlPanel from './src/controls/control_panel';
 import getCalibrationInfo from './src/controls/get_calibration_info';
 import {
   deleteVideos,
+  executeSql,
   initializeDatabase,
   selectVideos,
 } from './src/history/database';
@@ -113,6 +114,7 @@ const App = () => {
       1.0,
       0,
       -1,
+      0,
       () => {},
     );
   };
@@ -146,6 +148,7 @@ const App = () => {
     duration: number,
     startIndex: number,
     endIndex: number,
+    sleepSPerFrame: number,
     callback: (speedFound: boolean, speed: number) => void,
   ) => {
     const calibrationInfo = await getCalibrationInfo();
@@ -161,6 +164,7 @@ const App = () => {
       calibrationInfo.boundsY2 / imageResizeFactor,
       startIndex,
       endIndex,
+      sleepSPerFrame,
       (speedFound: boolean, speed: number) => {
         callback(speedFound, speed);
       },
@@ -183,6 +187,7 @@ const App = () => {
             video.duration,
             0,
             -1,
+            0,
             async (speedFound: boolean, speed: number) => {
               console.log(
                 'returned from analysis speedFound=',
@@ -243,6 +248,7 @@ const App = () => {
       videoDetails.duration,
       0,
       -1,
+      0,
       async (speedFound: boolean, speed: number) => {
         console.log('Came back from analysis.');
       },
@@ -272,6 +278,14 @@ const App = () => {
 
   const increaseProgression = () => {
     setProgression(progression + 1);
+  };
+
+  const testInsertRow = () => {
+    executeSql(
+      //"update videos set date = '2021-04-13 ' || substr(date, 12) where url like '2021-04-13%'",
+      "delete from videos where url = 'none'",
+    );
+    console.log('Done');
   };
 
   const showCamera = cameraConfiguration != undefined && permissionGranted;
@@ -329,6 +343,10 @@ const App = () => {
               )}
             </View>
 
+            <ShotHistory
+              progression={progression}
+              selectedShot={analyzeShot}></ShotHistory>
+
             <View style={styles.sectionContainer}>
               <Button
                 onPress={rerunAnalysis}
@@ -375,6 +393,12 @@ const App = () => {
               />
 
               <Button
+                onPress={testInsertRow}
+                title="Test Insert Row"
+                color="#841584"
+              />
+
+              <Button
                 onPress={onPressListFiles}
                 title="List Files"
                 color="#841584"
@@ -385,10 +409,6 @@ const App = () => {
                 title="Reset Files"
                 color="#841584"
               />
-
-              <ShotHistory
-                progression={progression}
-                selectedShot={analyzeShot}></ShotHistory>
 
               <StatusBox status={status}></StatusBox>
               <View

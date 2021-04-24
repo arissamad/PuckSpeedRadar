@@ -47,6 +47,7 @@ class ImageProcessor: NSObject {
     y2 y2NS: NSNumber,
     startIndex startIndexNS: NSNumber,
     endIndex endIndexNS: NSNumber,
+    sleepSPerFrame sleepSPerFrameNS: NSNumber,
     callback successCallback: @escaping RCTResponseSenderBlock)
   {
     fps = fpsNS as! Int;
@@ -58,6 +59,7 @@ class ImageProcessor: NSObject {
     y2 = y2NS as! Int;
     let startIndex = startIndexNS as! Int;
     let requestedEndIndex = endIndexNS as! Int;
+    let sleepSPerFrame = sleepSPerFrameNS as! Int;
     
     print("Starting image processing with " + uri, x1, y1, x2, y2);
     print("FPS:", fps);
@@ -146,7 +148,7 @@ class ImageProcessor: NSObject {
           
           let blobs = self.processImage(cgImage: image!, time: actualTime);
           var terminateAnalysis = self.processBlobs(blobs: blobs, time: actualTime);
-          
+        
           if(self.currIndex == Int(narrowedEndIndex)) {
             terminateAnalysis = true;
             print("Terminating analysis as we are at the end of the narrowed window");
@@ -166,8 +168,12 @@ class ImageProcessor: NSObject {
               successCallback([true, speed]);
             } else {
               self.speechSynthesizer.speak(AVSpeechUtterance(string: "No shot found."));
-              successCallback([false, 0]);
+              successCallback([true, 0]);
             }
+          }
+          
+          if(sleepSPerFrame > 0) {
+            sleep(UInt32(sleepSPerFrame));
           }
         }
       }
@@ -275,6 +281,72 @@ class ImageProcessor: NSObject {
     var avgSpeed: Double = 0;
     
     if(self.speeds.count > 0) {
+      
+      // Exclude the lowest and highest readings, if they are off by more than 10% of the average of the rest
+      var lowest: Double = 10000;
+      var lowestIndex = -1;
+      var highest: Double = 0;
+      var highestIndex = -1;
+      
+      for (index, speed) in self.speeds.enumerated() {
+        if(speed < lowest) {
+          lowest = speed;
+          lowestIndex = index;
+        }
+        if(speed > highest) {
+          highest = speed;
+          highestIndex = index;
+        }
+      }
+      
+      var countWithoutLowest: Int = 0;
+      var totalWithoutLowest: Double = 0;
+      
+      var countWithoutHighest: Int = 0;
+      var totalWithoutHighest: Double = 0;
+      
+      for (index, speed) in self.speeds.enumerated() {
+        if(index != lowestIndex) {
+          totalWithoutLowest += speed;
+          countWithoutLowest += 1;
+        }
+        
+        if(index != highestIndex) {
+          totalWithoutHighest += speed;
+          countWithoutHighest += 1;
+        }
+      }
+      
+      let avgWithoutLowest = totalWithoutLowest / Double(countWithoutLowest);
+      let avgWithoutHighest = totalWithoutHighest / Double(countWithoutHighest);
+      
+      var indexesToRemove: [Int] = [];
+      let lowerBoundary = avgWithoutLowest - (0.1 * avgWithoutLowest);
+      if(lowest < lowerBoundary) {
+        indexesToRemove.append(lowestIndex);
+      }
+      
+      let higherBoundary = avgWithoutHighest + (0.1 * avgWithoutHighest);
+      if(highest > higherBoundary) {
+        indexesToRemove.append(highestIndex);
+      }
+      
+      print("avgWithoutLowest: \(avgWithoutLowest) lowestIndex: \(lowestIndex) lowest value: \(lowest) lower boundary: \(lowerBoundary)");
+      print("avgWithoutHighest: \(avgWithoutHighest) highestIndex: \(highestIndex) highest value: \(highest) highest boundary: \(higherBoundary)");
+      print("Indexes to remove: \(indexesToRemove)");
+      
+      print("prior to removal: ", self.speeds);
+      
+      if(indexesToRemove.count > 1 && indexesToRemove[0] < indexesToRemove[1]) {
+        indexesToRemove = [indexesToRemove[1], indexesToRemove[0]];
+      }
+      
+      for index in indexesToRemove {
+        self.speeds.remove(at: index);
+      }
+      
+      print("after removal: ", self.speeds);
+      
       var total: Double = 0;
       for speed in self.speeds {
         total += speed;

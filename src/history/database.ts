@@ -1,9 +1,5 @@
 import dateFormat from 'dateformat';
-import SQLite, {
-  ResultSet,
-  SQLError,
-  SQLiteDatabase,
-} from 'react-native-sqlite-storage';
+import SQLite, {ResultSet, SQLiteDatabase} from 'react-native-sqlite-storage';
 import VideoDetails from './video_details';
 
 export function initializeDatabase() {
@@ -72,7 +68,7 @@ export async function executeSql(
         (_, resultSet: ResultSet) => {
           resolve(resultSet.rows.raw());
         },
-        (_, error: SQLError) => {
+        (error: any) => {
           console.log('There was an error:', error);
           reject(
             new Error(
@@ -88,5 +84,7 @@ export async function executeSql(
 }
 
 export function sqlDate(date: Date): string {
-  return dateFormat(date);
+  const dateStr = dateFormat(date, 'yyyy-mm-dd HH:MM:ss');
+  console.log('Date str is ', dateStr);
+  return dateStr;
 }
