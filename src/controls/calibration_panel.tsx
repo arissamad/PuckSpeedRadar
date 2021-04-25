@@ -20,6 +20,8 @@ import getCalibrationInfo from './get_calibration_info';
 
 type Props = {
   showPanel: boolean;
+  name: string;
+  setName: (name: string) => void;
   photoUri: string;
 };
 
@@ -72,7 +74,6 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
 
   const [calibrationMode, setCalibrationMode] = useState<CalibrationMode>('c1');
 
-  const [name, setName] = useState('');
   const [calibrationDistance, setCalibrationDistance] = useState(1);
 
   const loadCalibrationPoints = async () => {
@@ -101,7 +102,7 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
     setLoadedCalibrationPoint(true);
 
     const name = (await AsyncStorage.getItem('name')) ?? 'noname';
-    setName(name);
+    props.setName(name);
 
     console.log('loaded calibration points');
   };
@@ -185,7 +186,7 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
   };
 
   const updateName = (name: string) => {
-    setName(name);
+    props.setName(name);
     AsyncStorage.setItem('name', name);
   };
 
@@ -273,7 +274,7 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
         <Text style={textLabelStyle}>Name:</Text>
         <TextInput
           style={textInputStyle}
-          defaultValue={name}
+          defaultValue={props.name}
           onChangeText={updateName}></TextInput>
       </View>
       <View style={[leftAlignedRow, {marginTop: 10}]}>

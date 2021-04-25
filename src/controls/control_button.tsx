@@ -8,13 +8,13 @@ type Props = {
 };
 
 export default function ControlButton(props: Props): React.ReactElement {
+  let textColor = 'rgba(250, 250, 250, 0.5)';
+  if (props.style?.['color']) {
+    textColor = props.style['color'];
+  }
   return (
     <View style={{...styles.buttonStyle, ...props.style}}>
-      <Button
-        onPress={props.onPress}
-        title={props.title}
-        color="rgba(250, 250, 250, 0.5)"
-      />
+      <Button onPress={props.onPress} title={props.title} color={textColor} />
     </View>
   );
 }
@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
     paddingBottom: 7,
     backgroundColor: 'rgba(30, 30, 30, 0.3)',
     marginLeft: 5,
-    marginRight: 40,
+    marginRight: 5,
     marginBottom: 30,
   },
 });

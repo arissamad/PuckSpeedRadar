@@ -8,6 +8,7 @@
  * @format
  */
 
+import AsyncStorage from '@react-native-community/async-storage';
 import React, {useEffect, useRef, useState} from 'react';
 import {
   Button,
@@ -35,6 +36,7 @@ import MyCamera, {
   imageWidth,
 } from './src/camera/my_camera';
 import CalibrationPanel from './src/controls/calibration_panel';
+import ControlButton from './src/controls/control_button';
 import ControlPanel from './src/controls/control_panel';
 import getCalibrationInfo from './src/controls/get_calibration_info';
 import {
@@ -62,6 +64,9 @@ const App = () => {
 
   const [permissionGranted, setPermissionGranted] = useState(false);
 
+  const [name, setName] = useState('noname');
+  const [names, setNames] = useState(['Aris', 'Aida']);
+
   useEffect(() => {
     getPermissions(setPermissionGranted);
     getCameraConfiguration(setCameraConfiguration);
@@ -84,7 +89,34 @@ const App = () => {
     console.log('We are now listening to image-available');
 
     initializeDatabase();
+
+    const loadName = async () => {
+      const name = (await AsyncStorage.getItem('name')) ?? 'noname';
+      setName(name);
+    };
+    loadName();
   }, []);
+
+  useEffect(() => {
+    const loadNames = async () => {
+      console.log('Loading names');
+      const nameResults = await executeSql(
+        'select distinct name, count(name) as frequency from videos group by lower(name) order by frequency desc limit 8',
+      );
+      const names = nameResults.map((record) => {
+        return record.name;
+      });
+      const currName = (
+        (await AsyncStorage.getItem('name')) ?? 'noname'
+      ).toLowerCase();
+      if (names.indexOf(currName) < 0) {
+        names.push(currName);
+      }
+      names.sort();
+      setNames(names);
+    };
+    loadNames();
+  }, [name]);
   const [status, setStatus] = useState('initialized');
 
   const [photoUri, setPhotoUri] = useState('');
@@ -303,6 +335,30 @@ const App = () => {
     NativeModules.Bulb.turnOn();
   };
 
+  const renderNames = () => {
+    const nameButtons = names.map((currName) => {
+      let style = {...styles.nameButtonStyle};
+      const updateName = () => {
+        console.log('Setting name2', currName);
+        setName(currName);
+        AsyncStorage.setItem('name', currName);
+      };
+      if (name.toLowerCase() == currName.toLowerCase()) {
+        style = {
+          ...styles.nameButtonStyle,
+          ...styles.selectedNameButtonStyle,
+        };
+      }
+      return (
+        <ControlButton
+          title={currName}
+          onPress={updateName}
+          style={style}></ControlButton>
+      );
+    });
+    return nameButtons;
+  };
+
   return (
     <>
       <StatusBar barStyle="dark-content" />
@@ -321,6 +377,8 @@ const App = () => {
               </View>
             </View>
 
+            <View style={styles.namePanelHolder}>{renderNames()}</View>
+
             <View style={styles.controlPanelHolder}>
               <ControlPanel
                 onPressCalibrate={clickedCalibrate}
@@ -333,6 +391,8 @@ const App = () => {
             <View style={styles.centerContent}>
               <CalibrationPanel
                 showPanel={showCalibrationPanel}
+                name={name}
+                setName={setName}
                 photoUri={photoUri}></CalibrationPanel>
             </View>
 
@@ -474,11 +534,35 @@ const styles = StyleSheet.create({
   cameraHolderInner: {
     position: 'absolute',
   },
+  namePanelHolder: {
+    position: 'absolute',
+    zIndex: 2,
+    marginTop: 10,
+    height: 330,
+    width: '100%',
+    borderColor: 'green',
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: 'column',
+    flexWrap: 'wrap',
+  },
+  nameButtonStyle: {
+    width: 90,
+    fontWeight: 'bold',
+    color: 'black',
+    marginBottom: 10,
+    marginRight: 640,
+  },
+  selectedNameButtonStyle: {
+    backgroundColor: 'pink',
+    borderColor: 'red',
+  },
   controlPanelHolder: {
     position: 'relative',
-    zIndex: 1,
+    zIndex: 2,
     paddingTop: 280,
-    transform: [{translateX: 20}],
+    width: imageWidth,
+    marginLeft: 95,
   },
   highlight: {
     fontWeight: '700',
