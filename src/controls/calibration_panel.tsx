@@ -99,6 +99,8 @@ export default function CalibrationPanel(props: Props): React.ReactElement {
 
     setCalibrationDistance(calibrationInfo.calibrationDistance);
     setLoadedCalibrationPoint(true);
+
+    const name = (await AsyncStorage.getItem('name')) ?? 'noname';
     setName(name);
 
     console.log('loaded calibration points');

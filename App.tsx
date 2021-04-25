@@ -250,7 +250,7 @@ const App = () => {
       videoDetails.duration,
       0,
       -1,
-      0,
+      2,
       async (speedFound: boolean, speed: number) => {
         console.log('Came back from analysis.');
       },

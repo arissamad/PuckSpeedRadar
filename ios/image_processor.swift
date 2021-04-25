@@ -65,6 +65,7 @@ class ImageProcessor: NSObject {
     print("FPS:", fps);
     print("Duration:", duration);
     print("Pixels per meter:", pixelsPerMeter);
+    print("Sleep Seconds per frame:", sleepSPerFrame);
     
     let lastFrame = Int((duration * Double(fps)) - 3); // No need to consider the last few frames
     
@@ -99,7 +100,7 @@ class ImageProcessor: NSObject {
         let calculatedIndex = convertedTime.value;
         
         if(alreadyFoundFrame) {
-          print("CONTINUING TO PROCESS FRAMES, but already canceled!");
+          //print("CONTINUING TO PROCESS FRAMES, but already canceled!");
           return;
         }
         
@@ -139,14 +140,19 @@ class ImageProcessor: NSObject {
         let narrowFrameTimes = self.calculateFrameTimes(startIndex: narrowedStartIndex, endIndex: narrowedEndIndex, step: 1);
         self.currIndex = narrowedStartIndex;
         
+        var firstBlobFound = false;
+        
         var alreadyCompletedAnalysis = false;
         assetImageGenerator.generateCGImagesAsynchronously(forTimes: narrowFrameTimes) { (requestedTime: CMTime, image: CGImage?, actualTime: CMTime, result: AVAssetImageGenerator.Result, error: Error?) in
           if(alreadyCompletedAnalysis) {
-            print("CONTINUING TO PROCESS FRAMES, but already completed analysis!");
+            //print("CONTINUING TO PROCESS FRAMES, but already completed analysis!");
             return;
           }
           
           let blobs = self.processImage(cgImage: image!, time: actualTime);
+          if(blobs.count > 0) {
+            firstBlobFound = true;
+          }
           var terminateAnalysis = self.processBlobs(blobs: blobs, time: actualTime);
         
           if(self.currIndex == Int(narrowedEndIndex)) {
@@ -155,13 +161,15 @@ class ImageProcessor: NSObject {
           }
           
           if(terminateAnalysis) {
+            print("speeds: ", self.speeds, self.numFramesFoundSpeed);
             alreadyCompletedAnalysis = true;
             assetImageGenerator.cancelAllCGImageGeneration();
             
             let timeEnd = CFAbsoluteTimeGetCurrent();
             print("  current total runtime=\(self.format(timeEnd - timeStart))")
             
-            let foundSpeed = self.numFramesFoundSpeed > 4;
+            
+            let foundSpeed = self.numFramesFoundSpeed > 3;
             
             if(foundSpeed) {
               let speed = self.calculateAndTransmitSpeed(speeds: self.speeds)
@@ -172,7 +180,7 @@ class ImageProcessor: NSObject {
             }
           }
           
-          if(sleepSPerFrame > 0) {
+          if(firstBlobFound && sleepSPerFrame > 0) {
             sleep(UInt32(sleepSPerFrame));
           }
         }
@@ -226,25 +234,24 @@ class ImageProcessor: NSObject {
     } else if(blobs.count == 2) {
       // This could be the stick and the puck
       print(" -- found 2 blobs, maybe stick and puck");
-      if(previousBlob != nil) {
-        var leftBlob: Blob;
-        var rightBlob: Blob;
-        if(blobs[0].getCenterOfGravity().getX() < blobs[1].getCenterOfGravity().getX()) {
-          leftBlob = blobs[0];
-          rightBlob = blobs[1];
-        } else {
-          leftBlob = blobs[1];
-          rightBlob = blobs[0];
-        }
-        
-        if(Double(leftBlob.getCenterOfGravity().getX()) < 0.1 * Double(croppedWidth) && rightBlob.getCenterOfGravity().getX() > previousBlob!.getCenterOfGravity().getX()) {
-          // Good to go! WE are assuming the stick is the left blob.
-          print(" -- Using the right blob, assuming the left blob is the stick");
-          selectedBlob = rightBlob;
+      var leftBlob: Blob;
+      var rightBlob: Blob;
+      if(blobs[0].getCenterOfGravity().getX() < blobs[1].getCenterOfGravity().getX()) {
+        leftBlob = blobs[0];
+        rightBlob = blobs[1];
+      } else {
+        leftBlob = blobs[1];
+        rightBlob = blobs[0];
+      }
+      if(Double(leftBlob.getCenterOfGravity().getX()) < 0.1 * Double(croppedWidth)) {
+        if(previousBlob != nil && rightBlob.getCenterOfGravity().getX() > previousBlob!.getCenterOfGravity().getX() ||
+            previousBlob == nil && Double(rightBlob.getCenterOfGravity().getX()) > 0.2 * Double(croppedWidth)) {
+            // Good to go! WE are assuming the stick is the left blob.
+            print(" -- Using the right blob, assuming the left blob is the stick");
+            selectedBlob = rightBlob;
         }
       }
     }
-    
     
     var foundSpeed = false;
     if(selectedBlob != nil) {
