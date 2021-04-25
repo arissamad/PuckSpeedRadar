@@ -175,7 +175,9 @@ const App = () => {
 
   const executeSingleRecordingSequence = async () => {
     console.log('Playing start sound...');
-    await playStartSound();
+    await playStartSound(isRecordingRef);
+
+    if (!isRecordingRef.current) return;
 
     console.log('Starting video recording...');
     const promise = new Promise<void>((resolve, reject) => {
@@ -183,6 +185,11 @@ const App = () => {
         onRecordingFinished: (video) => {
           playEndSound();
           console.log('Got video:', video);
+
+          if (!isRecordingRef.current) {
+            resolve();
+            return;
+          }
 
           analyze(
             video.path,
