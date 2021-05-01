@@ -597,6 +597,11 @@ PODS:
     - React
   - RNReactNativeABeep (1.0.4):
     - React
+  - RNSound (0.11.0):
+    - React
+    - RNSound/Core (= 0.11.0)
+  - RNSound/Core (0.11.0):
+    - React
   - Yoga (1.14.0)
   - YogaKit (1.18.1):
     - Yoga (~> 1.14)
@@ -656,6 +661,7 @@ DEPENDENCIES:
   - "RNFBFirestore (from `../node_modules/@react-native-firebase/firestore`)"
   - RNFS (from `../node_modules/react-native-fs`)
   - RNReactNativeABeep (from `../node_modules/react-native-a-beep/ios`)
+  - RNSound (from `../node_modules/react-native-sound`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -753,6 +759,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-fs"
   RNReactNativeABeep:
     :path: "../node_modules/react-native-a-beep/ios"
+  RNSound:
+    :path: "../node_modules/react-native-sound"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -814,6 +822,7 @@ SPEC CHECKSUMS:
   RNFBFirestore: 2e602fc143aaae72d99333caa6d36266d6fa14aa
   RNFS: 93d5b5535eb39d98e6b19009faa8fe717f7ea45d
   RNReactNativeABeep: 48dcc9a3c52ac98a5e2df055d760a36dc5cba754
+  RNSound: c980916b596cc15c8dcd2f6ecd3b13c4881dbe20
   Yoga: 4bd86afe9883422a7c4028c00e34790f560923d6
   YogaKit: f782866e155069a2cca2517aafea43200b01fd5a
 

@@ -11,6 +11,10 @@
 		0B07C2E926064A8F009FEB6C /* SwiftImage in Frameworks */ = {isa = PBXBuildFile; productRef = 0B07C2E826064A8F009FEB6C /* SwiftImage */; };
 		0B6CA8E3263D981B00294205 /* initialize_stuff.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B6CA8E2263D981B00294205 /* initialize_stuff.swift */; };
 		0B6CA8E6263D983100294205 /* initialize_stuff.m in Sources */ = {isa = PBXBuildFile; fileRef = 0B6CA8E5263D983100294205 /* initialize_stuff.m */; };
+		0B6CA92B263DB22800294205 /* countdown_beep.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0B6CA928263DB22800294205 /* countdown_beep.wav */; };
+		0B6CA92C263DB22800294205 /* start_beep.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0B6CA929263DB22800294205 /* start_beep.wav */; };
+		0B6CA92D263DB22800294205 /* done_beep.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0B6CA92A263DB22800294205 /* done_beep.wav */; };
+		0B6CA930263DB9D300294205 /* start_beep2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0B6CA92F263DB9D300294205 /* start_beep2.wav */; };
 		0B72CE10260EF96C0023C574 /* blob.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B72CE0F260EF96B0023C574 /* blob.swift */; };
 		0B72CE13260EFA310023C574 /* polygon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B72CE12260EFA310023C574 /* polygon.swift */; };
 		0B72CE16260EFCA30023C574 /* bpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B72CE15260EFCA30023C574 /* bpoint.swift */; };
@@ -39,6 +43,10 @@
 		0B04AFBD25F49C7F0051FAF6 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		0B6CA8E2263D981B00294205 /* initialize_stuff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = initialize_stuff.swift; sourceTree = "<group>"; };
 		0B6CA8E5263D983100294205 /* initialize_stuff.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = initialize_stuff.m; sourceTree = "<group>"; };
+		0B6CA928263DB22800294205 /* countdown_beep.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = countdown_beep.wav; sourceTree = "<group>"; };
+		0B6CA929263DB22800294205 /* start_beep.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = start_beep.wav; sourceTree = "<group>"; };
+		0B6CA92A263DB22800294205 /* done_beep.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = done_beep.wav; sourceTree = "<group>"; };
+		0B6CA92F263DB9D300294205 /* start_beep2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = start_beep2.wav; sourceTree = "<group>"; };
 		0B72CE0F260EF96B0023C574 /* blob.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = blob.swift; sourceTree = "<group>"; };
 		0B72CE12260EFA310023C574 /* polygon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = polygon.swift; sourceTree = "<group>"; };
 		0B72CE15260EFCA30023C574 /* bpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bpoint.swift; sourceTree = "<group>"; };
@@ -168,6 +176,10 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				0B6CA92F263DB9D300294205 /* start_beep2.wav */,
+				0B6CA928263DB22800294205 /* countdown_beep.wav */,
+				0B6CA92A263DB22800294205 /* done_beep.wav */,
+				0B6CA929263DB22800294205 /* start_beep.wav */,
 				0B04AFBD25F49C7F0051FAF6 /* GoogleService-Info.plist */,
 				13B07FAE1A68108700A75B9A /* PuckSpeedRadar */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
@@ -273,8 +285,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B6CA92D263DB22800294205 /* done_beep.wav in Resources */,
+				0B6CA92C263DB22800294205 /* start_beep.wav in Resources */,
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
+				0B6CA930263DB9D300294205 /* start_beep2.wav in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				0B6CA92B263DB22800294205 /* countdown_beep.wav in Resources */,
 				0B04AFBE25F49C7F0051FAF6 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
