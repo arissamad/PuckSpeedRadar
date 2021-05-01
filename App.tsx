@@ -99,7 +99,7 @@ const App = () => {
     setTimeout(() => {
       console.log('From JS: Initializing');
       NativeModules.InitializeStuff.initialize();
-    }, 5000);
+    }, 2000);
   }, []);
 
   useEffect(() => {
