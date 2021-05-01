@@ -49,10 +49,13 @@ import moveAndSaveFile from './src/history/move_and_save_file';
 import ShotHistory from './src/history/shot_history';
 import VideoDetails from './src/history/video_details';
 import StatusBox from './src/status/status_box';
-import playEndSound from './src/utils/play_end_sound';
 import playErrorSound from './src/utils/play_error_sound';
-import playStartSound from './src/utils/play_start_sound';
 import sleep from './src/utils/sleep';
+import {
+  initializeSounds,
+  playStartSound,
+  playStopSound,
+} from './src/utils/sound_center';
 
 const fps = 60;
 
@@ -100,6 +103,8 @@ const App = () => {
       console.log('From JS: Initializing');
       NativeModules.InitializeStuff.initialize();
     }, 2000);
+
+    initializeSounds();
   }, []);
 
   useEffect(() => {
@@ -220,7 +225,7 @@ const App = () => {
     const promise = new Promise<void>((resolve, reject) => {
       cameraRef.current?.startRecording({
         onRecordingFinished: (video) => {
-          playEndSound();
+          playStopSound();
           console.log('Got video:', video);
 
           if (!isRecordingRef.current) {
@@ -280,7 +285,9 @@ const App = () => {
   const rerunAnalysis = () => {};
 
   const playSound = async () => {
-    playErrorSound();
+    console.log('Playing start sounds');
+    await playStartSound(isRecordingRef);
+    await playStopSound();
   };
 
   const onCallSql = async () => {
